@@ -3,8 +3,8 @@ import numpy as np
 
 @dataclass(frozen=True)
 class SimulationConfig:
-    L: int = 200
-    amostras: int = 50
+    L: int = 100
+    amostras: int = 1
     total_passos: int = 500
     seed: int | None = 12345
     create_snapshot: bool = False
@@ -14,11 +14,11 @@ class SimulationConfig:
     passo_filma_inicio: int = 0
     cond_ini: int = 0
     k: float = 0.1
-    r: float = 3.3
+    r: float = 3.0
     G: int = 5
     c: float = 1.0
-    sigma: float = 1.05
-    alpha: float = 0.4
+    sigma: float = 1.25
+    alpha: float = 0.25
 
     @property
     def total_jog(self) -> int:

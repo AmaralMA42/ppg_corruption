@@ -212,7 +212,9 @@ def calc_payoff_por_estrategia(estrategia, payoff, total_jog):
 
     return medias
 
-@jit(nopython=True, fastmath=True,  parallel=False)  # todo olhar!!!
+@jit(nopython=True, fastmath=True,  parallel=False)  # todo olhar!otimizar contagem de fração e
+#todo  payoffs de maneira sequencial, so atualiza dentro do if de estratégia ter sido mudada, mas
+# isso é compleeeexo, entao por hora deixa a cada inicio de passo de monte-carlo, varremos tudo
 def atualiza_total_estrat(estrategia, payoff, viz, params, total_jog):
     k = params[4]
 #    list_atual = np.random.randint(0, total_jog, size=total_jog)  # lista de jogadores aleatórios para um  MCS
@@ -224,20 +226,17 @@ def atualiza_total_estrat(estrategia, payoff, viz, params, total_jog):
 #        pay_atual = calcula_payoff(atual, estrategia, viz, params)
         vizsorteado = viz[atual, np.random.randint(0, 4)]  # sorteio de um vizinho aleatório de 0 a 3 #random.randint(0, 3)
 #        pay_viz = calcula_payoff(vizsorteado, estrategia, viz, params)
+        if estrategia[atual] != estrategia[vizsorteado]:
+            pay_atual = payoff[atual]
+            pay_viz = payoff[vizsorteado]
+            var_pay = pay_viz - pay_atual
+            chance_muda = prob_flip(var_pay, k)  # Probabilidade de fermi
+            if np.random.random()<chance_muda:
+                estrategia[atual] = estrategia[vizsorteado]  # mudança da estratégia do sítio central
+    #            atualiza_payoff_local(atual, estrategia, payoff, viz, params)  # primeiros vizinhos
+                atualiza_payoff_local_extra(atual, estrategia, payoff, viz, params) #segundos vizinhos
 
 
-        pay_atual = payoff[atual]
-        pay_viz = payoff[vizsorteado]
-
-        var_pay = pay_viz - pay_atual
-
-        prob =  np.random.random() # list_prob[cont]                          # list_prob[cont] # random.random()  # probabilidade aleatória
-        chance_muda = prob_flip(var_pay, k)  # Probabilidade de fermi
-
-        if prob < chance_muda:
-
-            estrategia[atual] = estrategia[vizsorteado]  # mudança da estratégia do sítio central
-            atualiza_payoff_local_extra(atual, estrategia, payoff, viz, params)
 
 @jit(nopython=True)
 def atualiza_payoff_local(atual, estrategia, payoff, viz, params):
@@ -272,6 +271,7 @@ def monte_carlo(amo, viz, params, estrategia, payoff, estrat_t, payavg_t, imageg
     # inicia os payoffs de cada sítio
     for i in range(total_jog):
         payoff[i] = calcula_payoff(i, estrategia, viz, params)
+
 
     # Começo da simulação de Monte-Carlo
     for passo_atual in range(0, total_passos):
