@@ -438,6 +438,7 @@ def main():
     camera = Camera(fig)
     # 0 Copera 1 Deserta 2 CorruPto
     params = cfg.simulation_params()
+#    print(params)
 #    params[0] = r
 #    params[1] = G
 #    params[2] = c
