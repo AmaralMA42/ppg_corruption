@@ -213,16 +213,85 @@ def plot_vs_r(r_values, mean, sem, output_dir,cfg):
     plt.savefig(output_dir / "vs_r.png", dpi=150)
     plt.show()
 
-def plot_sweep_1d(x, mean, sem, labels, xlabel):
-    import matplotlib.pyplot as plt
+def plot_sweep_1d(x, mean, sem, labels, xlabel, cfg):
+    colors = ["blue", "red", "green"]
+    param_text = (
+        f"L={cfg.L}\n"
+        f"$\\sigma$={cfg.sigma}\n"
+        f"$\\alpha$={cfg.alpha}\n"
+        f"k={cfg.k}"
+    )
 
-    plt.figure()
+    plt.text(
+        0.98, 0.02, param_text,
+        transform=plt.gca().transAxes,
+        fontsize=9,
+        verticalalignment='bottom',
+        horizontalalignment='right',
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.6)
+    )
+    plt.figure(figsize=(6,4))
 
     for i, label in enumerate(labels):
         plt.errorbar(x, mean[:, i], yerr=sem[:, i], label=label, capsize=3)
 
+    plt.title(f"Dependencia em ={xlabel}\n")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
     plt.xlabel(xlabel)
     plt.ylabel("observável médio")
+    plt.show()
+
+def plot_trajectories_vs_time(values, traj, param_name, ylabel):
+    """
+    traj: (n_values, 3, T)
+    """
+
+    T = traj.shape[2]
+    x = np.arange(T)
+
+    labels = ["C", "D", "P"]
+    colors = ["blue", "red", "green"]
+
+    plt.figure(figsize=(8,5))
+
+    for i, val in enumerate(values):
+        for s in range(3):
+            plt.plot(
+                x,
+                traj[i, s],
+                color=colors[s],
+                alpha=0.3,
+                label=f"{labels[s]}, {param_name}={val:.2f}" if i == 0 else None
+            )
+
+    plt.xlabel("Monte Carlo step")
+    plt.ylabel(ylabel)
+    plt.title(f"Evolução temporal (varrendo {param_name})")
+
+    # legenda só uma vez
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_variance_vs_param(values, var_mean, var_sem, labels, param_name):
+    plt.figure(figsize=(6,4))
+
+    for i in range(3):
+        plt.errorbar(
+            values,
+            var_mean[:, i],
+            yerr=var_sem[:, i],
+            label=labels[i],
+            capsize=3
+        )
+
+    plt.xlabel(param_name)
+    plt.ylabel("Variância temporal")
+    plt.title("Flutuações temporais (indicador de ciclos)")
     plt.legend()
     plt.grid(alpha=0.3)
     plt.tight_layout()

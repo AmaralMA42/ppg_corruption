@@ -49,6 +49,9 @@ def inicia_estrategias(estrategia, total_jog, L, cond_ini):
             for j in range(0, L):
                 if i < tgangle*j  and i < L//2:
                     estrategia[j * L + i] = 2
+    elif cond_ini == 4:
+        for jogador_atual in range(total_jog):  # Lembete, for in range vai até total_jog-1!!
+            estrategia[jogador_atual] = np.random.randint(2)  # Estado inicial do jogador como aleatório
 
 #Versão MAIS eficiente (nível ideal)
 #Atualizar contadores durante a simulação
