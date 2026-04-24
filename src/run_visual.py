@@ -4,7 +4,7 @@ from scipy.ndimage import uniform_filter
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-
+from core_simulation import *
 from config import SimulationConfig
 from core_simulation import (
     atualiza_total_estrat,
@@ -14,6 +14,7 @@ from core_simulation import (
     inicia_vizinhos,
 )
 from plotting import plota_payoff_por_estrategia, plota_todas_amostras
+
 
 cfg = SimulationConfig()
 L = cfg.L
@@ -43,6 +44,51 @@ FIGURES_DIR.mkdir(exist_ok=True)
 np.random.seed(seed)
 start_time = time.time()
 
+class VisualCallback:
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.L = cfg.L
+        self.frames = []
+
+        self.fig, self.ax = plt.subplots()
+        self.im = self.ax.imshow(
+            np.zeros((self.L, self.L)),
+            cmap='brg',
+            vmin=0,
+            vmax=2
+        )
+
+    def __call__(self, passo, estrategia, payoff):
+
+        if passo % self.cfg.framerate != 0:
+            return
+
+        grid = estrategia.reshape(self.L, self.L)
+        self.im.set_data(grid)
+
+        self.fig.canvas.draw()
+        frame = np.asarray(self.fig.canvas.buffer_rgba()).copy()
+        self.frames.append(Image.fromarray(frame))
+
+    def save_gif(self):
+        if not self.frames:
+            return
+
+        duration = int(1000 / max(self.cfg.fpsgif, 1))
+
+        self.frames[0].save(
+            "visual.gif",
+            save_all=True,
+            append_images=self.frames[1:],
+            duration=duration,
+            loop=0,
+        )
+
+    def close(self):
+        plt.close(self.fig)
+
+
+# todo importante, unificar monte carlo pra imagens e para simulações
 #@jit(nopython=True, fastmath=True,  parallel=False)
 def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, imagegrid, payoff_grid, grad_grid, var_grid, total_jog, total_passos, framerate, passo_filma_inicio, L):
     amo=0
@@ -185,6 +231,42 @@ def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, image
 
 
 def main():
+    total_jog = cfg.L * cfg.L
+    params = cfg.simulation_params()
+
+    callback = VisualCallback(cfg)
+
+    viz = np.zeros((total_jog, 4), dtype=np.int32)
+    inicia_vizinhos(viz, total_jog, L)
+
+    estrat_t, payavg_t = monte_carlo_single(
+        viz,
+        params,
+        total_jog,
+        total_passos,
+        L,
+        seed,
+        callback=callback
+    )
+
+    estrat_t = estrat_t[:, np.newaxis, :]
+    payavg_t = payavg_t[:, np.newaxis, :]
+
+    estrat_medio = np.sum(estrat_t, axis=1) / amostras
+    payavg_medio = np.sum(payavg_t, axis=1) / amostras
+
+    callback.save_gif()
+    callback.close()
+
+    plota_todas_amostras(estrat_t, estrat_medio, cfg)
+    plota_payoff_por_estrategia(payavg_t, payavg_medio, cfg)
+
+    estrat_t, payavg_t = monte_carlo_single(
+        viz, params, total_jog, total_passos, L, seed,
+        callback=callback
+    )
+
+
     # Definição de variáveis do jogo
     total_jog=L * L
     estrategia = np.zeros(total_jog, dtype=int)
@@ -197,7 +279,7 @@ def main():
     payoff_grid = np.zeros((L, L))
     grad_grid = np.zeros((L, L))
     var_grid = np.zeros((L, L))
-    # 0 Copera 1 Deserta 2 CorruPto
+   # 0 Copera 1 Deserta 2 CorruPto
     params = cfg.simulation_params()
     inicia_vizinhos(viz, total_jog, L)
 
@@ -208,12 +290,9 @@ def main():
     estrat_medio_t = np.sum(estrat_t, axis=1) / amostras
     payavg_medio_t = np.sum(payavg_t, axis=1) / amostras
 
-
-
-
     plota_todas_amostras(estrat_t, estrat_medio_t,cfg)
     plota_payoff_por_estrategia(payavg_t, payavg_medio_t,cfg)
- #   imprime_dados(estrat_medio_t, total_passos, start_time,cfg)
+#    imprime_dados(estrat_medio_t, total_passos, start_time,cfg)
 
 
 #    plota_todas_amostras(estrat_t, estrat_medio_t)

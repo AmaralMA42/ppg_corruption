@@ -128,6 +128,71 @@ def temporal_variance(estrat_t, start):
     """
     return np.var(estrat_t[:, :, start:], axis=2)
 
+def start_sweep(cfg, sweep, data_dir, figures_dir):
+    print(f"\n=== Sweepgeral em {sweep.param_name} ===")
+    print(
+        f"r={cfg.r}, sigma={cfg.sigma}, alpha={cfg.alpha}, "
+        f"k={cfg.k}, G={cfg.G}, c={cfg.c}"
+    )
+
+    values = sweep.values()
+
+    mean, sem, traj_strat, traj_pay, vars_mean, vars_sem, varp_mean, varp_sem = sweep_1d(
+        cfg,
+        sweep.param_name,
+        values,
+        observable_fn=obs_fraction
+    )
+
+
+
+    # plot
+    plot_sweep_1d(
+        values,
+        mean,
+        sem,
+        ["C", "D", "P"],
+        sweep.param_name,
+        cfg
+    )
+
+    plot_trajectories_vs_time(
+        values,
+        traj_strat,
+        sweep.param_name,
+        ylabel="ρ"
+    )
+
+    plot_trajectories_vs_time(
+        values,
+        traj_pay,
+        sweep.param_name,
+        ylabel="Payoff"
+    )
+
+    plot_trajectories_vs_time(
+        values,
+        traj_pay,
+        sweep.param_name,
+        ylabel="Payoff",
+        step = 10
+    )
+
+    plot_variance_vs_param(values, vars_mean, vars_sem, ["C", "D", "P"], sweep.param_name)
+    plot_variance_vs_param(values, varp_mean, varp_sem, ["Cpay", "D", "P"], sweep.param_name)
+
+
+    # salvar dados
+    np.savetxt(
+        DATA_DIR / f"vs_{sweep.param_name}.dat",
+        np.column_stack([
+            values,
+            mean[:, 0], mean[:, 1], mean[:, 2],
+            sem[:, 0], sem[:, 1], sem[:, 2],
+        ]),
+            header=f"{sweep.param_name} C_mean D_mean P_mean C_sem D_sem P_sem"
+        )
+
 
 def main():
     start = time.time()
@@ -185,61 +250,7 @@ def main():
     ]
 
     for sweep in sweeps:
-        print(f"\n=== Sweepgeral em {sweep.param_name} ===")
-        print(
-            f"r={cfg.r}, sigma={cfg.sigma}, alpha={cfg.alpha}, "
-            f"k={cfg.k}, G={cfg.G}, c={cfg.c}"
-        )
-
-        values = sweep.values()
-
-        mean, sem, traj_strat, traj_pay, vars_mean, vars_sem, varp_mean, varp_sem = sweep_1d(
-            cfg,
-            sweep.param_name,
-            values,
-            observable_fn=obs_fraction
-        )
-
-
-
-        # plot
-        plot_sweep_1d(
-            values,
-            mean,
-            sem,
-            ["C", "D", "P"],
-            sweep.param_name,
-            cfg
-        )
-
-        plot_trajectories_vs_time(
-            values,
-            traj_strat,
-            sweep.param_name,
-            ylabel="ρ"
-        )
-
-        plot_trajectories_vs_time(
-            values,
-            traj_pay,
-            sweep.param_name,
-            ylabel="Payoff"
-        )
-
-        plot_variance_vs_param(values, vars_mean, vars_sem, ["C", "D", "P"], sweep.param_name)
-        plot_variance_vs_param(values, varp_mean, varp_sem, ["Cpay", "D", "P"], sweep.param_name)
-
-
-        # salvar dados
-        np.savetxt(
-            DATA_DIR / f"vs_{sweep.param_name}.dat",
-            np.column_stack([
-                values,
-                mean[:, 0], mean[:, 1], mean[:, 2],
-                sem[:, 0], sem[:, 1], sem[:, 2],
-            ]),
-            header=f"{sweep.param_name} C_mean D_mean P_mean C_sem D_sem P_sem"
-        )
+        start_sweep(cfg, sweep, DATA_DIR, FIGURES_DIR)
 
 
     print(f"Tempo total: {time.time()-start:.2f}s")

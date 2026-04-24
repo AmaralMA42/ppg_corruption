@@ -1,6 +1,8 @@
 import numpy as np
 from numba import jit, prange
 
+
+
 @jit(nopython=True, fastmath=True, parallel=True)
 def inicia_vizinhos(viz, total_jog, L):
     # Inicialização das estratégias e definição de vizinhos
@@ -229,7 +231,7 @@ def monte_carlo_single_worker(params, total_jog, total_passos, L, seed): #gpt fe
 
     return monte_carlo_single(viz, params, total_jog, total_passos, L, seed)
 
-def monte_carlo_single(viz, params, total_jog, total_passos, L, seed): #gpt feito, estranho
+def monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=None): #gpt feito, estranho
 
     estrategia = np.zeros(total_jog, dtype=np.int32)
     payoff = np.zeros(total_jog)
@@ -248,7 +250,12 @@ def monte_carlo_single(viz, params, total_jog, total_passos, L, seed): #gpt feit
         estrat_t[:, passo] = frac
         payavg_t[:, passo] = pay
 
+        # teste de figuras dentro
+        if callback is not None:
+            callback(passo, estrategia, payoff)
+
         atualiza_total_estrat(estrategia, payoff, viz, params, total_jog)
+
 
     return estrat_t, payavg_t
 
@@ -308,12 +315,14 @@ def run_simulation(L, amostras, total_passos, params):
         estrategia[:] = 0
         payoff[:] = 0
 
-        estrat_t, payavg_t = monte_carlo(
-            amo, viz, params,
-            estrategia, payoff,
-            estrat_t, payavg_t,
-            total_jog, total_passos, L
-        )
+#        estrat_t, payavg_t = monte_carlo(
+#            amo, viz, params,
+#            estrategia, payoff,
+#            estrat_t, payavg_t,
+#            total_jog, total_passos, L
+#        )
+
+        estrat_t, payavg_t  = monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=None)
 
     estrat_medio = np.mean(estrat_t, axis=1)
     payavg_medio = np.mean(payavg_t, axis=1)

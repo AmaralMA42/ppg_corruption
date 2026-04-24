@@ -243,7 +243,7 @@ def plot_sweep_1d(x, mean, sem, labels, xlabel, cfg):
     plt.ylabel("observável médio")
     plt.show()
 
-def plot_trajectories_vs_time(values, traj, param_name, ylabel):
+def plot_trajectories_vs_time(values, traj, param_name, ylabel, step=1):
     """
     traj: (n_values, 3, T)
     """
@@ -256,7 +256,7 @@ def plot_trajectories_vs_time(values, traj, param_name, ylabel):
 
     plt.figure(figsize=(8,5))
 
-    for i, val in enumerate(values):
+    for i, val in enumerate(values[::step]):
         for s in range(3):
             plt.plot(
                 x,
