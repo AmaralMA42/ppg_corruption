@@ -4,9 +4,18 @@ from pathlib import Path
 from run_sampling import run_batches
 from config import SimulationConfig
 from plotting import plot_sweep_1d, plot_trajectories_vs_time, plot_variance_vs_param
-from dataclasses import replace
-from config_sweep import SweepConfig
+from dataclasses import replace, dataclass
 
+
+@dataclass
+class SweepConfig:
+    param_name: str
+    start: float
+    stop: float
+    n_points: int
+
+    def values(self):
+        return np.linspace(self.start, self.stop, self.n_points)
 
 cfg = SimulationConfig()
 L = cfg.L
@@ -35,11 +44,11 @@ def sweep_r(r_values, FIGURES_DIR=FIGURES_DIR):
             L, amostras, total_passos, params, base_seed=seed
         )
 
-        steady_state = np.mean(estrat_t[:, :, passos_media:], axis=2)
+        steady_state = np.mean(estrat_t[:, :, cfg_var.passos_media:], axis=2)
 
         mean = np.mean(steady_state, axis=1)
         std = np.std(steady_state, axis=1, ddof=1)
-        sem = std / np.sqrt(amostras)
+        sem = std / np.sqrt(cfg_var.amostras)
 
         results_mean.append(mean)
         results_sem.append(sem)
@@ -107,6 +116,8 @@ def sweep_1d(cfg, param_name, values, observable_fn):
         np.array(varp_means),
         np.array(varp_sems),
     )
+
+
 
 def obs_fraction(steady_strat, steady_pay):
     return steady_strat

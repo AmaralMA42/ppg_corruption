@@ -10,12 +10,6 @@ from utils import save_data
 
 
 cfg = SimulationConfig()
-L = cfg.L
-amostras = cfg.amostras
-total_passos = cfg.total_passos
-passos_media = cfg.passos_media
-seed = cfg.seed
-params = cfg.simulation_params()
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR / "data"
@@ -60,24 +54,21 @@ def run_batches(L, amostras, total_passos, params, base_seed=0):
 def main():
     start = time.time()
 
-#    estrat_t, estrat_medio, payavg_t, payavg_medio = run_simulation(
-#        L, amostras, total_passos, params, base_seed=seed
-#    )
     estrat_t, estrat_medio, payavg_t, payavg_medio = run_batches(
-        L, amostras, total_passos, params, base_seed=seed
+        cfg.L, cfg.amostras, cfg.total_passos, cfg.simulation_params(), base_seed=cfg.seed
     )
 
     plota_todas_amostras(estrat_t, estrat_medio, cfg)
     plota_payoff_por_estrategia(payavg_t, payavg_medio, cfg)
     # Media temporal apos a termalizacao.
 
-    steady_state = np.mean(estrat_t[:, :, passos_media:], axis=2)
-    steady_payoff = np.mean(payavg_t[:, :, passos_media:], axis=2)
+    steady_state = np.mean(estrat_t[:, :, cfg.passos_media:], axis=2)
+    steady_payoff = np.mean(payavg_t[:, :, cfg.passos_media:], axis=2)
 
-    plota_media_com_erro(steady_state, cfg, )
+    plota_media_com_erro(steady_state, cfg)
     plota_media_com_erro(steady_payoff, cfg, tipo='payoff')
 
-    save_data(steady_state, params)
+    save_data(steady_state, cfg.simulation_params())
 
     print(f"Tempo: {time.time()-start:.2f}s")
 

@@ -2,8 +2,17 @@ import matplotlib.pyplot as plt
 from config import SimulationConfig
 import time
 from pathlib import Path
-import matplotlib.pyplot as plt
 import numpy as np
+
+# visual_config.py (ou no topo do plotting.py)
+
+STRATEGY_LABELS = ["C", "D", "P"]
+
+STRATEGY_COLORS = {
+    "C": "Blues",
+    "D": "Reds",
+    "P": "Greens",
+}
 
 # @jit(nopython=True, fastmath=True,  parallel=False) Numba não compatível com impressão aparentemente
 def imprime_dados(estrat_medio_t, total_passos, start_time,cfg):
@@ -19,7 +28,7 @@ def imprime_dados(estrat_medio_t, total_passos, start_time,cfg):
     sigma = cfg.sigma
     alpha = cfg.alpha
     creat_snapshot = cfg.create_snapshot
-    deldata = cfg.deldata0
+    deldata = cfg.deldata  # Fixed typo: was deldata0
     framerate = cfg.framerate
     fpsgif = cfg.fpsgif
     passo_filma_inicio = cfg.passo_filma_inicio
@@ -294,5 +303,55 @@ def plot_variance_vs_param(values, var_mean, var_sem, labels, param_name):
     plt.title("Flutuações temporais (indicador de ciclos)")
     plt.legend()
     plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_heatmap(X, Y, Z, xlabel, ylabel, title=""):
+    plt.figure(figsize=(6, 5))
+
+    im = plt.imshow(
+        Z.T,
+        origin='lower',
+        aspect='auto',
+        extent=[X[0], X[-1], Y[0], Y[-1]],
+    )
+
+    plt.colorbar(im, label=r"$\rho_C$")
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_heatmap_3(X, Y, Z, xlabel, ylabel, mode="fraction"):
+    labels = ["C", "D", "P"]
+    if mode == "fraction":
+        cmaps = ["Blues", "Reds", "Greens"]
+        vmin, vmax = 0, 1
+    elif mode == "variance":
+        cmaps = ["magma", "magma", "magma"]
+        vmin = np.min(Z)
+        vmax = np.max(Z)
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+
+    for k in range(3):
+        im = axes[k].imshow(
+            Z[:, :, k].T,
+            origin='lower',
+            aspect='auto',
+            extent=[X[0], X[-1], Y[0], Y[-1]],
+            cmap=cmaps[k],
+            vmin=vmin, vmax=vmax
+        )
+
+        axes[k].set_title(f"ρ_{labels[k]} ({mode})")
+        axes[k].set_xlabel(xlabel)
+        axes[k].set_ylabel(ylabel)
+
+        fig.colorbar(im, ax=axes[k])
+
     plt.tight_layout()
     plt.show()
