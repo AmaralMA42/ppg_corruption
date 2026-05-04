@@ -5,7 +5,7 @@ from run_sampling import run_batches
 from config import SimulationConfig
 from plotting import plot_sweep_1d, plot_trajectories_vs_time, plot_variance_vs_param
 from dataclasses import replace, dataclass
-
+#from config_sweep import SweepConfig
 
 @dataclass
 class SweepConfig:
@@ -44,11 +44,11 @@ def sweep_r(r_values, FIGURES_DIR=FIGURES_DIR):
             L, amostras, total_passos, params, base_seed=seed
         )
 
-        steady_state = np.mean(estrat_t[:, :, cfg_var.passos_media:], axis=2)
+        steady_state = np.mean(estrat_t[:, :, passos_media:], axis=2)
 
         mean = np.mean(steady_state, axis=1)
         std = np.std(steady_state, axis=1, ddof=1)
-        sem = std / np.sqrt(cfg_var.amostras)
+        sem = std / np.sqrt(amostras)
 
         results_mean.append(mean)
         results_sem.append(sem)

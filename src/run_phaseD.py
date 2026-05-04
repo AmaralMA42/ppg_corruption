@@ -5,10 +5,12 @@ from run_sampling import run_batches
 from config import SimulationConfig
 from plotting import plot_sweep_1d, plot_trajectories_vs_time, plot_variance_vs_param
 from dataclasses import replace
-from run_sweep import run_simulation
+from run_sweep import run_simulation, SweepConfig
 from plotting import plot_heatmap, plot_heatmap_3
 printatudo = True
 cfg = SimulationConfig()
+
+
 
 
 def obs_C(steady):

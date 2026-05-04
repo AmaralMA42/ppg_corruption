@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from config import SimulationConfig
 import time
 from pathlib import Path
+import matplotlib.pyplot as plt
 import numpy as np
 
 # visual_config.py (ou no topo do plotting.py)
@@ -28,7 +29,7 @@ def imprime_dados(estrat_medio_t, total_passos, start_time,cfg):
     sigma = cfg.sigma
     alpha = cfg.alpha
     creat_snapshot = cfg.create_snapshot
-    deldata = cfg.deldata  # Fixed typo: was deldata0
+    deldata = cfg.deldata0
     framerate = cfg.framerate
     fpsgif = cfg.fpsgif
     passo_filma_inicio = cfg.passo_filma_inicio
