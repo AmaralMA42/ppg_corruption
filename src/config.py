@@ -5,8 +5,8 @@ import numpy as np
 @dataclass(frozen=True)
 class SimulationConfig:
     L: int = 100
-    amostras: int = 1
-    total_passos: int = 1000
+    amostras: int = 20
+    total_passos: int = 2000
     percent_avg_MC: float = 0.9  # percent final a tirar media termica
     seed: int | None = 12345
     create_snapshot: bool = True
@@ -14,7 +14,7 @@ class SimulationConfig:
     framerate: int = 10
     fpsgif: int = 10
     passo_filma_inicio: int = 0
-    cond_ini: int = 4
+    cond_ini: int = 4   #  0 rand, 1 lines, 2 pizza, 3, 4 C&D
     k: float = 0.1
     r: float = 3.6
     G: int = 5
@@ -24,8 +24,8 @@ class SimulationConfig:
 
 
 #    param_name = 'r'
-    r_start: float = 3.8
-    r_stop: float = 4.2
+    r_start: float = 3.5
+    r_stop: float = 3.7
     r_npoints: int = 10
 
 #    param_name = 'alpha'
@@ -36,7 +36,7 @@ class SimulationConfig:
 #    param_name2 = 'sigma'
     sig_start: float = 1.0
     sig_stop: float = 1.1
-    sig_npoints: int = 2
+    sig_npoints: int = 1
 
     phaseport: str = 'both'  #sigma, alpha, ou both
 
