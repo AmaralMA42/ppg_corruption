@@ -4,9 +4,9 @@ import numpy as np
 
 @dataclass(frozen=True)
 class SimulationConfig:
-    L: int = 1
+    L: int = 100
     amostras: int = 1
-    total_passos: int = 2
+    total_passos: int = 1000
     percent_avg_MC: float = 0.9  # percent final a tirar media termica
     seed: int | None = 12345
     create_snapshot: bool = True
@@ -16,7 +16,7 @@ class SimulationConfig:
     passo_filma_inicio: int = 0
     cond_ini: int = 4
     k: float = 0.1
-    r: float = 3.7
+    r: float = 3.6
     G: int = 5
     c: float = 1.0
     sigma: float = 1.02
@@ -25,8 +25,8 @@ class SimulationConfig:
 
 #    param_name = 'r'
     r_start: float = 3.8
-    r_stop: float = 4.0
-    r_npoints: int = 5
+    r_stop: float = 4.2
+    r_npoints: int = 10
 
 #    param_name = 'alpha'
     alpha_start: float = 0.1
