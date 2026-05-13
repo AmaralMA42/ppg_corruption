@@ -192,7 +192,7 @@ def atualiza_total_estrat(estrategia, payoff, viz, params, total_jog):
             if np.random.random()<chance_muda:
                 estrategia[atual] = estrategia[vizsorteado]  # mudança da estratégia do sítio central
                 atualiza_payoff_local(atual, estrategia, payoff, viz, params)  # primeiros vizinhos
-    #            atualiza_payoff_local_extra(atual, estrategia, payoff, viz, params) #segundos vizinhos
+                atualiza_payoff_local_extra(atual, estrategia, payoff, viz, params) #segundos vizinhos
 
 
 
