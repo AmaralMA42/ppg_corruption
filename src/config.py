@@ -4,8 +4,8 @@ import numpy as np
 
 @dataclass(frozen=True)
 class SimulationConfig:
-    L: int = 400
-    amostras: int = 40
+    L: int = 100
+    amostras: int = 10
     total_passos: int = 1000
     percent_avg_MC: float = 0.9  # percent final a tirar media termica
     seed: int | None = 12345
@@ -24,19 +24,19 @@ class SimulationConfig:
 
 
 #    param_name = 'r'
-    r_start: float = 1.0
-    r_stop: float = 5.0
-    r_npoints: int = 10
+    r_start: float = 3.0
+    r_stop: float = 4.0
+    r_npoints: int = 20
 
 #    param_name = 'alpha'
     alpha_start: float = 0.0
     alpha_stop: float = 0.6
-    alpha_npoints: int = 10
+    alpha_npoints: int = 20
 
 #    param_name2 = 'sigma'
-    sig_start: float = 0.5
-    sig_stop: float = 1.5
-    sig_npoints: int = 10
+    sig_start: float = 0.8
+    sig_stop: float = 1.3
+    sig_npoints: int = 20
 
     phaseport: str = 'both'  #sigma, alpha, ou both
 
