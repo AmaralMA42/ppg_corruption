@@ -29,7 +29,6 @@ def imprime_dados(estrat_medio_t, total_passos, start_time,cfg):
     sigma = cfg.sigma
     alpha = cfg.alpha
     creat_snapshot = cfg.create_snapshot
-    deldata = cfg.deldata0
     framerate = cfg.framerate
     fpsgif = cfg.fpsgif
     passo_filma_inicio = cfg.passo_filma_inicio
@@ -156,7 +155,7 @@ def plota_payoff_por_estrategia(payavg_t, payavg_medio_t, cfg):
 
 
 
-def plota_media_com_erro(steady_state, cfg, tipo='estraegia'):
+def plota_media_com_erro(steady_state, cfg, tipo='estrategia'):
     amostras = steady_state.shape[1]
 
     mean = np.mean(steady_state, axis=1)
@@ -193,6 +192,7 @@ def plot_vs_r(r_values, mean, sem, output_dir,cfg):
         f"k={cfg.k}"
     )
 
+    plt.figure(figsize=(6,4))
     plt.text(
         0.98, 0.02, param_text,
         transform=plt.gca().transAxes,
@@ -201,7 +201,6 @@ def plot_vs_r(r_values, mean, sem, output_dir,cfg):
         horizontalalignment='right',
         bbox=dict(boxstyle='round', facecolor='white', alpha=0.6)
     )
-    plt.figure(figsize=(6,4))
 
     for i in range(3):
         plt.errorbar(
@@ -224,7 +223,6 @@ def plot_vs_r(r_values, mean, sem, output_dir,cfg):
     plt.show()
 
 def plot_sweep_1d(x, mean, sem, labels, xlabel, cfg):
-    colors = ["blue", "red", "green"]
     param_text = (
         f"L={cfg.L}\n"
         f"$\\sigma$={cfg.sigma}\n"
@@ -232,6 +230,7 @@ def plot_sweep_1d(x, mean, sem, labels, xlabel, cfg):
         f"k={cfg.k}"
     )
 
+    plt.figure(figsize=(6,4))
     plt.text(
         0.98, 0.02, param_text,
         transform=plt.gca().transAxes,
@@ -240,7 +239,6 @@ def plot_sweep_1d(x, mean, sem, labels, xlabel, cfg):
         horizontalalignment='right',
         bbox=dict(boxstyle='round', facecolor='white', alpha=0.6)
     )
-    plt.figure(figsize=(6,4))
 
     for i, label in enumerate(labels):
         plt.errorbar(x, mean[:, i], yerr=sem[:, i], label=label, capsize=3)
@@ -258,6 +256,7 @@ def plot_trajectories_vs_time(values, traj, param_name, ylabel, step=1):
     traj: (n_values, 3, T)
     """
 
+    step = max(int(step), 1)
     T = traj.shape[2]
     x = np.arange(T)
 
@@ -266,14 +265,15 @@ def plot_trajectories_vs_time(values, traj, param_name, ylabel, step=1):
 
     plt.figure(figsize=(8,5))
 
-    for i, val in enumerate(values[::step]):
+    for idx in range(0, len(values), step):
+        val = values[idx]
         for s in range(3):
             plt.plot(
                 x,
-                traj[i, s],
+                traj[idx, s],
                 color=colors[s],
                 alpha=0.3,
-                label=f"{labels[s]}, {param_name}={val:.2f}" if i == 0 else None
+                label=f"{labels[s]}, {param_name}={val:.2f}" if idx == 0 else None
             )
 
     plt.xlabel("Monte Carlo step")
