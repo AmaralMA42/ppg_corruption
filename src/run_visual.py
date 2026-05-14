@@ -29,11 +29,7 @@ G = cfg.G
 c = cfg.c
 sigma = cfg.sigma
 alpha = cfg.alpha
-creat_snapshot = cfg.create_snapshot
 deldata = cfg.deldata
-framerate = cfg.framerate
-fpsgif = cfg.fpsgif
-passo_filma_inicio = cfg.passo_filma_inicio
 cond_ini = cfg.cond_ini
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -90,8 +86,13 @@ class VisualCallback:
 
 # todo importante, unificar monte carlo pra imagens e para simulações
 #@jit(nopython=True, fastmath=True,  parallel=False)
-def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, imagegrid, payoff_grid, grad_grid, var_grid, total_jog, total_passos, framerate, passo_filma_inicio, L):
+def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, imagegrid, payoff_grid, grad_grid, var_grid, total_jog, total_passos, cfg):
     amo=0
+    L = cfg.L
+    framerate = cfg.framerate
+    fpsgif = cfg.fpsgif
+    passo_filma_inicio = cfg.passo_filma_inicio
+    create_snapshot = cfg.create_snapshot
     # Inicio das estratégias para amostra
     cond_ini = params[6]
     #Variáveis da imagem
@@ -141,7 +142,7 @@ def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, image
             payavg_t[count2, amo, passo_atual] = pay_strat[count2]  # C D P
             estrat_t[count2, amo, passo_atual] = frac[count2]
 
-        if creat_snapshot:
+        if create_snapshot:
             if passo_atual % framerate == 0 and passo_atual >= passo_filma_inicio:
                 imagegrid[:] = estrategia.reshape(L, L)
                 payoff_grid[:] = payoff.reshape(L, L)
@@ -198,7 +199,7 @@ def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, image
         # Etapa de atualização da estratégia
         atualiza_total_estrat(estrategia, payoff, viz, params, total_jog)  # atualiza cada rede individualmente
 
-    if creat_snapshot and frames_A:
+    if create_snapshot and frames_A:
         duration_ms = int(1000 / max(fpsgif, 1))
 
         frames_A[0].save(
@@ -209,7 +210,7 @@ def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, image
             loop=0,
         )
 
-    if creat_snapshot and frames_B:
+    if create_snapshot and frames_B:
         duration_ms = int(1000 / max(fpsgif, 1))
 
         frames_B[0].save(
@@ -234,41 +235,8 @@ def main():
     total_jog = cfg.L * cfg.L
     params = cfg.simulation_params()
 
-    callback = VisualCallback(cfg)
-
-    viz = np.zeros((total_jog, 4), dtype=np.int32)
-    inicia_vizinhos(viz, total_jog, L)
-
-    estrat_t, payavg_t = monte_carlo_single(
-        viz,
-        params,
-        total_jog,
-        total_passos,
-        L,
-        seed,
-        callback=callback
-    )
-
-    estrat_t = estrat_t[:, np.newaxis, :]
-    payavg_t = payavg_t[:, np.newaxis, :]
-
-    estrat_medio = np.sum(estrat_t, axis=1) / amostras
-    payavg_medio = np.sum(payavg_t, axis=1) / amostras
-
-    callback.save_gif()
-    callback.close()
-
-    plota_todas_amostras(estrat_t, estrat_medio, cfg)
-    plota_payoff_por_estrategia(payavg_t, payavg_medio, cfg)
-
-    estrat_t, payavg_t = monte_carlo_single(
-        viz, params, total_jog, total_passos, L, seed,
-        callback=callback
-    )
-
-
     # Definição de variáveis do jogo
-    total_jog=L * L
+    total_jog = L * L
     estrategia = np.zeros(total_jog, dtype=int)
     payoff = np.zeros(total_jog)
     estrat_t = np.zeros((3, amostras, total_passos))
@@ -285,7 +253,7 @@ def main():
 
 
 # SIMULAÇÂO!!!
-    estrat_t, payavg_t = monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, imagegrid,payoff_grid, grad_grid, var_grid, total_jog, total_passos, framerate, passo_filma_inicio, L)
+    estrat_t, payavg_t = monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, imagegrid, payoff_grid, grad_grid, var_grid, total_jog, total_passos, cfg)
 
     estrat_medio_t = np.sum(estrat_t, axis=1) / amostras
     payavg_medio_t = np.sum(payavg_t, axis=1) / amostras

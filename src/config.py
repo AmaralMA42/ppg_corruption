@@ -5,13 +5,13 @@ import numpy as np
 @dataclass(frozen=True)
 class SimulationConfig:
     L: int = 100
-    amostras: int = 10
+    amostras: int = 3
     total_passos: int = 1000
     percent_avg_MC: float = 0.9  # percent final a tirar media termica
     seed: int | None = 12345
     create_snapshot: bool = True
     deldata: bool = True
-    framerate: int = 10
+    framerate: int = 100
     fpsgif: int = 10
     passo_filma_inicio: int = 0
     cond_ini: int = 0   #  0 rand, 1 lines, 2 pizza, 3, 4 C&D
@@ -24,19 +24,19 @@ class SimulationConfig:
 
 
 #    param_name = 'r'
-    r_start: float = 3.0
-    r_stop: float = 4.0
-    r_npoints: int = 20
+    r_start: float = 2.2
+    r_stop: float = 3.7
+    r_npoints: int = 10
 
 #    param_name = 'alpha'
     alpha_start: float = 0.0
     alpha_stop: float = 0.6
-    alpha_npoints: int = 20
+    alpha_npoints: int = 10
 
 #    param_name2 = 'sigma'
-    sig_start: float = 0.8
+    sig_start: float = 0.9
     sig_stop: float = 1.3
-    sig_npoints: int = 20
+    sig_npoints: int = 10
 
     phaseport: str = 'both'  #sigma, alpha, ou both
 
