@@ -3,7 +3,7 @@ from numba import jit, prange
 
 
 
-@jit(nopython=True, fastmath=True, parallel=True)
+@jit(nopython=True, fastmath=True, parallel=False)
 def inicia_vizinhos(viz, total_jog, L):
     # Inicialização das estratégias e definição de vizinhos
     for jogador_atual in prange(total_jog):  # Lembrete, for in range vai até total_jog-1!!

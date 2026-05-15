@@ -4,39 +4,39 @@ import numpy as np
 
 @dataclass(frozen=True)
 class SimulationConfig:
-    L: int = 100
-    amostras: int = 5
-    total_passos: int = 1000
-    percent_avg_MC: float = 0.9  # percent final a tirar media termica
+    L: int = 150
+    amostras: int = 10
+    total_passos: int = 1200
+    percent_avg_MC: float = 0.8  # percent final a tirar media termica
     seed: int | None = 12345
     create_snapshot: bool = True
     deldata: bool = True
-    framerate: int = 1
+    framerate: int = 10
     fpsgif: int = 10
     passo_filma_inicio: int = 0
     cond_ini: int = 0   #  0 rand, 1 lines, 2 pizza, 3, 4 C&D
     k: float = 0.1
-    r: float = 3.3
+    r: float = 2.8
     G: int = 5
     c: float = 1.0
-    sigma: float = 1.05
-    alpha: float = 0.4
+    sigma: float = 1.01
+    alpha: float = 0.3
 
 
 #    param_name = 'r'
     r_start: float = 1.0
-    r_stop: float = 3.7
+    r_stop: float = 2.0
     r_npoints: int = 10
 
 #    param_name = 'alpha'
-    alpha_start: float = 0.0
-    alpha_stop: float = 0.9
-    alpha_npoints: int = 20
+    alpha_start: float = 0.1
+    alpha_stop: float = 0.3
+    alpha_npoints: int = 10
 
 #    param_name2 = 'sigma'
-    sig_start: float = 1.0
-    sig_stop: float = 3.0
-    sig_npoints: int = 5
+    sig_start: float = 0.998
+    sig_stop: float = 1.005
+    sig_npoints: int = 20
 
     phaseport: str = 'both'  #sigma, alpha, ou both
 

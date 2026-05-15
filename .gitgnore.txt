@@ -1,8 +1,0 @@
-__pycache__/
-*.pyc
-*.png
-*.gif
-*.dat
-data/
-figures/
-.env

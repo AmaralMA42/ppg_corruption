@@ -1,5 +1,0 @@
-numpy
-matplotlib
-numba
-celluloid
-pillow
