@@ -18,41 +18,12 @@ class SweepConfig:
         return np.linspace(self.start, self.stop, self.n_points)
 
 cfg = SimulationConfig()
-L = cfg.L
-amostras = cfg.amostras
-total_passos = cfg.total_passos
-passos_media = cfg.passos_media
-seed = cfg.seed
-params = cfg.simulation_params()
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR / "data"
 FIGURES_DIR = ROOT_DIR / "figures"
 DATA_DIR.mkdir(exist_ok=True)
 FIGURES_DIR.mkdir(exist_ok=True)
-
-def sweep_r(r_values, FIGURES_DIR=FIGURES_DIR):
-    results_mean = []
-    results_sem = []
-    for r_val in r_values:
-        print(f"Rodando r = {r_val:.2f}")
-
-        cfg_var = replace(cfg, r=r_val)
-        params = cfg_var.simulation_params()
-
-        estrat_t, _, payavg_t, _ = run_batches(
-            L, amostras, total_passos, params, base_seed=seed
-        )
-
-        steady_state = np.mean(estrat_t[:, :, passos_media:], axis=2)
-
-        mean = np.mean(steady_state, axis=1)
-        std = np.std(steady_state, axis=1, ddof=1)
-        sem = std / np.sqrt(amostras)
-
-        results_mean.append(mean)
-        results_sem.append(sem)
-    return np.array(results_mean), np.array(results_sem)
 
 def run_simulation(cfg):
     params = cfg.simulation_params()
@@ -94,12 +65,12 @@ def sweep_1d(cfg, param_name, values, observable_fn):
         obs = observable_fn(steady_strat, steady_pay)
 
         var_mean = np.mean(var_strat, axis=1)
-        var_sem = np.std(var_strat, axis=1, ddof=1) / np.sqrt(cfg_v.amostras)
+        var_sem = sem_across_samples(var_strat)
         varp_mean = np.mean(var_pay, axis=1)
-        varp_sem = np.std(var_pay, axis=1, ddof=1) / np.sqrt(cfg_v.amostras)
+        varp_sem = sem_across_samples(var_pay)
 
         means.append(np.mean(obs, axis=1))
-        sems.append(np.std(obs, axis=1, ddof=1) / np.sqrt(cfg_v.amostras))
+        sems.append(sem_across_samples(obs))
         vars_means.append(var_mean)
         vars_sems.append(var_sem)
         varp_means.append(varp_mean)
@@ -126,10 +97,6 @@ def obs_payoff(steady_strat, steady_pay):
     return steady_pay
 
 
-def update_config(cfg, **kwargs):
-    return replace(cfg, **kwargs)
-
-
 def temporal_variance(estrat_t, start):
     """
     Variância temporal após termalização.
@@ -138,6 +105,18 @@ def temporal_variance(estrat_t, start):
     return: (3, amostras)
     """
     return np.var(estrat_t[:, :, start:], axis=2)
+
+def sem_across_samples(values):
+    """
+    Erro padrao entre amostras.
+
+    values shape: (3, amostras)
+    return: (3,)
+    """
+    n_samples = values.shape[1]
+    if n_samples <= 1:
+        return np.zeros(values.shape[0])
+    return np.std(values, axis=1, ddof=1) / np.sqrt(n_samples)
 
 def start_sweep(cfg, sweep, data_dir, figures_dir):
     print(f"\n=== Sweepgeral em {sweep.param_name} ===")
@@ -195,7 +174,7 @@ def start_sweep(cfg, sweep, data_dir, figures_dir):
 
     # salvar dados
     np.savetxt(
-        DATA_DIR / f"vs_{sweep.param_name}.dat",
+        data_dir / f"vs_{sweep.param_name}.dat",
         np.column_stack([
             values,
             mean[:, 0], mean[:, 1], mean[:, 2],

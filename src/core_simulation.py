@@ -167,20 +167,15 @@ def calcula_payoff(sitio, estrategia, viz, params):
 
     return payoff
 
-
-
 # todo olhar!otimizar contagem de fração e
 #todo  payoffs de maneira sequencial, so atualiza dentro do if de estratégia ter sido mudada, mas
 # isso é compleeeexo, entao por hora deixa a cada inicio de passo de monte-carlo, varremos tudo
 @jit(nopython=True, fastmath=True,  parallel=False)
 def atualiza_total_estrat(estrategia, payoff, viz, params, total_jog):
     k = params[4]
-#    list_atual = np.random.randint(0, total_jog, size=total_jog)  # lista de jogadores aleatórios para um  MCS
-#    list_sorteio = np.random.randint(0, 4, size=total_jog)
-#    list_prob = np.random.random(size=total_jog)
     for cont in range(0, total_jog):
 
-        atual = np.random.randint(0, total_jog) # list_atual[cont]                       # list_atual[cont]  # np.random.randint(0, total_jog)
+        atual = np.random.randint(0, total_jog)
 #        pay_atual = calcula_payoff(atual, estrategia, viz, params)
         vizsorteado = viz[atual, np.random.randint(0, 4)]  # sorteio de um vizinho aleatório de 0 a 3 #random.randint(0, 3)
 #        pay_viz = calcula_payoff(vizsorteado, estrategia, viz, params)
@@ -193,7 +188,6 @@ def atualiza_total_estrat(estrategia, payoff, viz, params, total_jog):
                 estrategia[atual] = estrategia[vizsorteado]  # mudança da estratégia do sítio central
     #            atualiza_payoff_local(atual, estrategia, payoff, viz, params)  # primeiros vizinhos
                 atualiza_payoff_local_extra(atual, estrategia, payoff, viz, params) #segundos vizinhos
-
 
 
 @jit(nopython=True)
@@ -223,15 +217,15 @@ def mean_payoff(payoff):
     return s / len(payoff)
 
 
-def monte_carlo_single_worker(params, total_jog, total_passos, L, seed): #gpt feito mais estranho ainda
-    np.random.seed(seed)
-
+def monte_carlo_single_worker(params, total_jog, total_passos, L, seed):
     viz = np.zeros((total_jog, 4), dtype=np.int32)
     inicia_vizinhos(viz, total_jog, L)
 
     return monte_carlo_single(viz, params, total_jog, total_passos, L, seed)
 
-def monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=None): #gpt feito, estranho
+def monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=None):
+    if seed is not None:
+        np.random.seed(seed)
 
     estrategia = np.zeros(total_jog, dtype=np.int32)
     payoff = np.zeros(total_jog)
@@ -286,47 +280,7 @@ def monte_carlo(amo, viz, params, estrategia, payoff, estrat_t, payavg_t, total_
             payavg_t[count2, amo, passo_atual] = pay_strat[count2]  # C D P
             estrat_t[count2, amo, passo_atual] = frac[count2]
 
-
         # Etapa de atualização da estratégia
         atualiza_total_estrat(estrategia, payoff, viz, params, total_jog)  # atualiza cada rede individualmente
 
-#    if creat_snapshot:
-#        plt.figure(amo)
-#        plt.colorbar(ticks=[0, 1, 2, 3])
     return estrat_t, payavg_t
-
-
-# =========================
-# MULTI-AMOSTRAS
-# =========================
-
-
-# OLD!!!!
-#def run_simulation(L, amostras, total_passos, params):
-#    total_jog = L * L
-#    viz = np.zeros((total_jog, 4), dtype=np.int32)
-
-#    inicia_vizinhos(viz, total_jog, L)
-#    estrat_t = np.zeros((3, amostras, total_passos))
-#    payavg_t = np.zeros((3, amostras, total_passos))
-
-#    estrategia = np.zeros(total_jog, dtype=np.int32)
-#    payoff = np.zeros(total_jog)
-
-#    for amo in range(amostras):
-#        estrategia[:] = 0
-#        payoff[:] = 0
-
-##        estrat_t, payavg_t = monte_carlo(
-# #           amo, viz, params,
-#  #          estrategia, payoff,
-##            estrat_t, payavg_t,
-##            total_jog, total_passos, L
-##        )
-
-#        estrat_t, payavg_t  = monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=None)
-
-#    estrat_medio = np.mean(estrat_t, axis=1)
-#    payavg_medio = np.mean(payavg_t, axis=1)
-
-#    return estrat_t, estrat_medio, payavg_t, payavg_medio

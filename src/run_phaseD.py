@@ -1,18 +1,18 @@
 import numpy as np
 import time
-from pathlib import Path
-from run_sampling import run_batches
-from config import SimulationConfig
-from plotting import plot_sweep_1d, plot_trajectories_vs_time, plot_variance_vs_param
 from dataclasses import replace
-from run_sweep import run_simulation, SweepConfig
-from plotting import plot_heatmap, plot_heatmap_3
-printatudo = True
+
+from config import SimulationConfig
+from run_sweep import run_simulation
+from plotting import plot_heatmap_3
+
 cfg = SimulationConfig()
 
 
 
-
+# Funcoes legadas de exploracao 2D.
+# Ja foram usadas em rodadas anteriores, mas o fluxo ativo atual usa sweep_2d_all().
+# Mantidas como referencia para observaveis escalares ou testes rapidos.
 def obs_C(steady):
     return steady  # depois você pega índice 0
 

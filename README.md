@@ -67,12 +67,17 @@ Dependencias principais:
 - Matplotlib
 - Pillow
 
+Dependencias auxiliares usadas por scripts de debug/legado:
+
+- psutil
+- celluloid
+
 Instalacao sugerida:
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt.txt
+pip install -r requirements.txt
 ```
 
 No Linux/macOS:
@@ -80,7 +85,7 @@ No Linux/macOS:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt.txt
+pip install -r requirements.txt
 ```
 
 ## Como Rodar

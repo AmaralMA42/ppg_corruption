@@ -1,8 +1,5 @@
 import matplotlib.pyplot as plt
-from config import SimulationConfig
 import time
-from pathlib import Path
-import matplotlib.pyplot as plt
 import numpy as np
 
 # visual_config.py (ou no topo do plotting.py)
@@ -17,29 +14,11 @@ STRATEGY_COLORS = {
 
 # @jit(nopython=True, fastmath=True,  parallel=False) Numba não compatível com impressão aparentemente
 def imprime_dados(estrat_medio_t, total_passos, start_time,cfg):
-    L = cfg.L
-    amostras = cfg.amostras
     total_passos = cfg.total_passos
-    passos_media = cfg.passos_media
-    seed = cfg.seed
-    k = cfg.k
-    r = cfg.r
-    G = cfg.G
-    c = cfg.c
-    sigma = cfg.sigma
-    alpha = cfg.alpha
-    creat_snapshot = cfg.create_snapshot
-    framerate = cfg.framerate
-    fpsgif = cfg.fpsgif
-    passo_filma_inicio = cfg.passo_filma_inicio
-    cond_ini = cfg.cond_ini
-    ROOT_DIR = Path(__file__).resolve().parent.parent
-    DATA_DIR = ROOT_DIR / "data"
-    FIGURES_DIR = ROOT_DIR / "figures"
-    DATA_DIR.mkdir(exist_ok=True)
-    FIGURES_DIR.mkdir(exist_ok=True)
+    data_dir = cfg.data_dir
+    data_dir.mkdir(exist_ok=True)
 
-    arquivo2 = open(DATA_DIR / f"subpop_r{r}_sigma{sigma}.dat", "w+")
+    arquivo2 = open(data_dir / f"subpop_r{cfg.r}_sigma{cfg.sigma}.dat", "w+")
     for cont in range(0, total_passos):
         arquivo2.write(f"{cont} {estrat_medio_t[0, cont]:.4f} {estrat_medio_t[1, cont]:.4f} "
                        f"{estrat_medio_t[2, cont]:.4f} \n")
@@ -159,8 +138,11 @@ def plota_media_com_erro(steady_state, cfg, tipo='estrategia'):
     amostras = steady_state.shape[1]
 
     mean = np.mean(steady_state, axis=1)
-    std = np.std(steady_state, axis=1, ddof=1)
-    sem = std / np.sqrt(amostras)
+    if amostras <= 1:
+        sem = np.zeros_like(mean)
+    else:
+        std = np.std(steady_state, axis=1, ddof=1)
+        sem = std / np.sqrt(amostras)
 
     labels = ["C", "D", "P"]
     x = np.arange(3)

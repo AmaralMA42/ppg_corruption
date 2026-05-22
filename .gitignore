@@ -1,0 +1,41 @@
+# Python caches and environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# IDE/editor metadata
+.idea/
+.vscode/
+
+# Local environment files
+.env
+.env.*
+
+# Generated simulation outputs
+figures/
+data/
+animations/
+Phase Portraits/
+parameter sweep/
+time series/
+k oscila/
+
+# Generated data products
+data/raw/
+data/processed/
+src/data/processed/
+*.npy
+*.dat
+
+# Generated media
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+
+/legacy code monolit_pos abril26/
+/legacy code monolit_pos abril26/
