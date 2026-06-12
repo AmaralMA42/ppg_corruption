@@ -5,43 +5,9 @@ from dataclasses import replace
 from config import SimulationConfig
 from run_sweep import run_simulation
 from plotting import plot_heatmap_3
+from utils import config_metadata, load_npz_result, save_npz_result
 
 cfg = SimulationConfig()
-
-
-
-# Funcoes legadas de exploracao 2D.
-# Ja foram usadas em rodadas anteriores, mas o fluxo ativo atual usa sweep_2d_all().
-# Mantidas como referencia para observaveis escalares ou testes rapidos.
-def obs_C(steady):
-    return steady  # depois você pega índice 0
-
-def obs_fraction_C(steady):
-    # steady: (3, amostras)
-    return np.mean(steady[0])  # média sobre amostras
-
-def obs_index(idx):
-    def f(steady):
-        return np.mean(steady[idx])
-    return f
-
-def sweep_2d(cfg, param_x, values_x, param_y, values_y, observable_fn):
-    Z = np.zeros((len(values_x), len(values_y)))
-
-    for i, vx in enumerate(values_x):
-        for j, vy in enumerate(values_y):
-            print(f"{param_x}={vx}, {param_y}={vy}")
-
-            cfg_v = replace(cfg, **{param_x: vx, param_y: vy})
-
-            estrat_t, _, payavg_t, _ = run_simulation(cfg_v)
-
-            steady = np.mean(estrat_t[:, :, cfg_v.passos_media:], axis=2)
-
-            # exemplo: fração de cooperadores
-            Z[i, j] = observable_fn(steady)
-
-    return Z
 
 def sweep_2d_all(cfg, param_x, values_x, param_y, values_y):
     Z = np.zeros((len(values_x), len(values_y), 3))  # C, D, P
@@ -53,7 +19,7 @@ def sweep_2d_all(cfg, param_x, values_x, param_y, values_y):
 
             cfg_v = replace(cfg, **{param_x: vx, param_y: vy})
 
-            estrat_t, _, _, _ = run_simulation(cfg_v)
+            estrat_t, _, _, _, _, _ = run_simulation(cfg_v)
 
             steady = np.mean(
                 estrat_t[:, :, cfg_v.passos_media:], axis=2
@@ -68,37 +34,80 @@ def sweep_2d_all(cfg, param_x, values_x, param_y, values_y):
 
     return Z, Z_var
 
+def phase_values(cfg, param_name):
+    if param_name == "r":
+        return np.linspace(cfg.r_start, cfg.r_stop, cfg.r_npoints)
+    if param_name == "alpha":
+        return np.linspace(cfg.alpha_start, cfg.alpha_stop, cfg.alpha_npoints)
+    if param_name == "sigma":
+        return np.linspace(cfg.sig_start, cfg.sig_stop, cfg.sig_npoints)
+    raise ValueError(f"Parametro de fase desconhecido: {param_name}")
+
+def selected_phase_pairs(cfg):
+    phaseport = cfg.phaseport
+    phase_pairs = {
+        "r_alpha": ("r", "alpha"),
+        "r_sigma": ("r", "sigma"),
+        "alpha_sigma": ("alpha", "sigma"),
+    }
+
+    if phaseport == "all":
+        return list(phase_pairs.values())
+    if phaseport not in phase_pairs:
+        valid = ", ".join([*phase_pairs.keys(), "all"])
+        raise ValueError(f"phaseport invalido: {phaseport}. Use um de: {valid}")
+    return [phase_pairs[phaseport]]
+
+def run_phase_pair(cfg, param_x, param_y):
+    values_x = phase_values(cfg, param_x)
+    values_y = phase_values(cfg, param_y)
+
+    Z, Z_var = sweep_2d_all(cfg, param_x, values_x, param_y, values_y)
+
+    metadata = config_metadata(
+        cfg,
+        "phase_2d",
+        param_x=param_x,
+        param_y=param_y,
+    )
+    output_file = save_npz_result(
+        cfg,
+        "phase_2d",
+        f"phase_{param_x}_{param_y}",
+        metadata=metadata,
+        values_x=values_x,
+        values_y=values_y,
+        Z=Z,
+        Z_var=Z_var,
+    )
+    print(f"Dados salvos em: {output_file}")
+
+    plot_heatmap_3(values_x, values_y, Z, param_x, param_y)
+    plot_heatmap_3(values_x, values_y, Z_var, param_x, f"{param_y} variance", "variance")
+
+    return output_file
+
+def plot_saved_phase(path):
+    arrays, metadata = load_npz_result(path)
+    param_x = metadata["param_x"]
+    param_y = metadata["param_y"]
+
+    plot_heatmap_3(arrays["values_x"], arrays["values_y"], arrays["Z"], param_x, param_y)
+    plot_heatmap_3(
+        arrays["values_x"],
+        arrays["values_y"],
+        arrays["Z_var"],
+        param_x,
+        f"{param_y} variance",
+        "variance",
+    )
+    return metadata
+
 def main():
     start = time.time()
-#    r_vals = np.linspace(cfg.r_start, cfg.r_stop, cfg.r_npoints)
-#    sigma_vals = np.linspace(cfg.sig_start, cfg.sig_stop, cfg.sig_npoints)
-#    obs_C = obs_index(0)
-#    obs_D = obs_index(1)
-#    obs_P = obs_index(2)
-#    Z = sweep_2d(cfg, "r", r_vals, "sigma", sigma_vals, obs_C)
-#    plot_heatmap(r_vals, sigma_vals, Z, "r", "sigma", "Fração de C")
 
-    if cfg.phaseport in ['alpha', 'both']:
-        r_vals = np.linspace(cfg.r_start, cfg.r_stop, cfg.r_npoints)
-        alpha_vals = np.linspace(cfg.alpha_start, cfg.alpha_stop, cfg.alpha_npoints)
-
-        Z, Z_var = sweep_2d_all(cfg, "r", r_vals, "alpha", alpha_vals)
-
-        plot_heatmap_3(r_vals, alpha_vals, Z, "r", "alpha")
-
-        plot_heatmap_3(r_vals, alpha_vals, Z_var, "r", "alpha variance", 'variance')
-
-    if cfg.phaseport in ['sigma', 'both']:
-        r_vals = np.linspace(cfg.r_start, cfg.r_stop, cfg.r_npoints)
-        sigma_vals = np.linspace(cfg.sig_start, cfg.sig_stop, cfg.sig_npoints)
-
-        Z, Z_var = sweep_2d_all(cfg, "r", r_vals, "sigma", sigma_vals)
-
-        plot_heatmap_3(r_vals, sigma_vals, Z, "r", " sigma")
-
-        plot_heatmap_3(r_vals, sigma_vals, Z_var, "r", "sigma variance", 'variance')
-
-
+    for param_x, param_y in selected_phase_pairs(cfg):
+        run_phase_pair(cfg, param_x, param_y)
 
     print(f"Tempo: {time.time()-start:.2f}s")
 

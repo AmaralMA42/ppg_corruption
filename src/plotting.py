@@ -1,8 +1,5 @@
 import matplotlib.pyplot as plt
-import time
 import numpy as np
-
-# visual_config.py (ou no topo do plotting.py)
 
 STRATEGY_LABELS = ["C", "D", "P"]
 
@@ -11,20 +8,6 @@ STRATEGY_COLORS = {
     "D": "Reds",
     "P": "Greens",
 }
-
-# @jit(nopython=True, fastmath=True,  parallel=False) Numba não compatível com impressão aparentemente
-def imprime_dados(estrat_medio_t, total_passos, start_time,cfg):
-    total_passos = cfg.total_passos
-    data_dir = cfg.data_dir
-    data_dir.mkdir(exist_ok=True)
-
-    arquivo2 = open(data_dir / f"subpop_r{cfg.r}_sigma{cfg.sigma}.dat", "w+")
-    for cont in range(0, total_passos):
-        arquivo2.write(f"{cont} {estrat_medio_t[0, cont]:.4f} {estrat_medio_t[1, cont]:.4f} "
-                       f"{estrat_medio_t[2, cont]:.4f} \n")
-    print(f"----- {(time.time() - start_time):.4f} seconds or {((time.time() - start_time) / 60.0):.4f} minutes-----")
-    arquivo2.close()
-
 
 def plota_dados(estrat_medio_t,cfg):
 
@@ -130,6 +113,40 @@ def plota_payoff_por_estrategia(payavg_t, payavg_medio_t, cfg):
     )
 
     plt.legend()
+    plt.show()
+
+
+def plota_atividade(activity_t, activity_medio_t, cfg):
+    plt.figure()
+
+    for i in range(activity_t.shape[0]):
+        plt.plot(activity_t[i, :], alpha=0.25, color="gray")
+
+    plt.plot(activity_medio_t, label="A(t) media", linewidth=2.0, color="black")
+
+    param_text = (
+        f"L={cfg.L}\n"
+        f"r={cfg.r}\n"
+        f"$\\sigma$={cfg.sigma}\n"
+        f"$\\alpha$={cfg.alpha}\n"
+        f"k={cfg.k}"
+    )
+
+    plt.text(
+        0.98, 0.98, param_text,
+        transform=plt.gca().transAxes,
+        fontsize=9,
+        verticalalignment='top',
+        horizontalalignment='right',
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.6)
+    )
+
+    plt.xlabel("Numero de Passos")
+    plt.ylabel("A(t) / N")
+    plt.title("Atividade normalizada por MCS")
+    plt.grid(alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
     plt.show()
 
 
@@ -264,6 +281,29 @@ def plot_trajectories_vs_time(values, traj, param_name, ylabel, step=1):
 
     # legenda só uma vez
     plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_activity_trajectories_vs_time(values, traj_activity, param_name, step=1):
+    step = max(int(step), 1)
+    T = traj_activity.shape[1]
+    x = np.arange(T)
+
+    plt.figure(figsize=(8,5))
+
+    for idx in range(0, len(values), step):
+        plt.plot(
+            x,
+            traj_activity[idx],
+            alpha=0.45,
+            label=f"{param_name}={values[idx]:.2f}" if idx == 0 else None
+        )
+
+    plt.xlabel("Monte Carlo step")
+    plt.ylabel("A(t) / N")
+    plt.title(f"Atividade normalizada temporal (varrendo {param_name})")
     plt.grid(alpha=0.3)
     plt.tight_layout()
     plt.show()

@@ -10,12 +10,13 @@ from core_simulation import (
     calcula_payoff,
     inicia_estrategias,
     inicia_vizinhos,
+    seed_numba,
 )
-from plotting import plota_payoff_por_estrategia, plota_todas_amostras
+from plotting import plota_payoff_por_estrategia, plota_todas_amostras, plota_atividade
+from utils import config_metadata, load_npz_result, save_npz_result
 
 
 cfg = SimulationConfig()
-#amostras = cfg.amostras
 amostras = 1
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -24,15 +25,17 @@ FIGURES_DIR = ROOT_DIR / "figures"
 DATA_DIR.mkdir(exist_ok=True)
 FIGURES_DIR.mkdir(exist_ok=True)
 
-# todo importante, unificar monte carlo pra imagens e para simulações
-#@jit(nopython=True, fastmath=True,  parallel=False)
-def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, imagegrid, payoff_grid, grad_grid, var_grid, total_jog, total_passos, cfg):
+def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, activity_t, imagegrid, payoff_grid, grad_grid, var_grid, total_jog, total_passos, cfg):
     amo=0
+    if cfg.seed is not None:
+        seed_numba(cfg.seed)
+
     L = cfg.L
     framerate = cfg.framerate
     fpsgif = cfg.fpsgif
     passo_filma_inicio = cfg.passo_filma_inicio
     create_snapshot = cfg.create_snapshot
+    absorbing_window = cfg.absorbing_window
     # Inicio das estratégias para amostra
     cond_ini = params[6]
     #Variáveis da imagem
@@ -45,14 +48,6 @@ def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, image
     frames_A = []
     frames_B = []
 
-##    figA.colorbar(axA1.imshow(imagegrid, vmin=0, vmax=2, cmap='brg'), ax=axA1)
-##    figA.colorbar(axA2.imshow(payoff_grid, cmap='viridis', vmin=vmin, vmax=vmax), ax=axA2)
-
-##    figB.colorbar(axB1.imshow(grad_grid, cmap='inferno'), ax=axB1)
-##    figB.colorbar(axB2.imshow(var_grid, cmap='magma'), ax=axB2)
-
-#    im1 = ax1.imshow(imagegrid, vmin=0, vmax=2, cmap='brg', interpolation='none')
-#    im2 = ax2.imshow(payoff_grid, cmap='viridis', vmin=vmin, vmax=vmax)
     imA1 = axA1.imshow(imagegrid, vmin=0, vmax=2, cmap='brg')
     imA2 = axA2.imshow(payoff_grid, cmap='viridis', vmin=vmin, vmax=vmax)
 
@@ -63,11 +58,6 @@ def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, image
     figA.colorbar(imA2, ax=axA2)
     figB.colorbar(imB1, ax=axB1)
     figB.colorbar(imB2, ax=axB2)
-#    plt.colorbar(im1, ax=ax1, ticks=[0, 1, 2])
-#    plt.colorbar(im2, ax=ax2)
-#    fig.subplots_adjust(left=0.04, right=0.98, bottom=0.06, top=0.92, wspace=0.22)
-
-
 
     inicia_estrategias(estrategia, total_jog, L, cond_ini)
     # inicia os payoffs de cada sítio
@@ -88,7 +78,6 @@ def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, image
                 payoff_grid[:] = payoff.reshape(L, L)
                 gx, gy = np.gradient(payoff_grid)
                 grad_grid[:] = np.sqrt(gx ** 2 + gy ** 2)
-#                var_grid[:] =  (payoff_grid - payoff_grid.mean())**2
                 mean = uniform_filter(payoff_grid, size=3)
                 mean_sq = uniform_filter(payoff_grid ** 2, size=3)
                 var_grid[:] = mean_sq - mean ** 2
@@ -137,7 +126,17 @@ def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, image
 
 
         # Etapa de atualização da estratégia
-        atualiza_total_estrat(estrategia, payoff, viz, params, total_jog)  # atualiza cada rede individualmente
+        activity = atualiza_total_estrat(estrategia, payoff, viz, params, total_jog)  # atualiza cada rede individualmente
+        activity_t[amo, passo_atual] = activity / total_jog
+
+        if absorbing_window > 0 and passo_atual + 1 >= absorbing_window:
+            start = passo_atual + 1 - absorbing_window
+            if np.sum(activity_t[amo, start:passo_atual + 1]) == 0:
+                for future in range(passo_atual + 1, total_passos):
+                    estrat_t[:, amo, future] = estrat_t[:, amo, passo_atual]
+                    payavg_t[:, amo, future] = payavg_t[:, amo, passo_atual]
+                    activity_t[amo, future] = 0
+                break
 
     if create_snapshot and frames_A:
         duration_ms = int(1000 / max(fpsgif, 1))
@@ -162,8 +161,15 @@ def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, image
         )
     plt.close(figA)
     plt.close(figB)
-    return estrat_t, payavg_t
+    return estrat_t, payavg_t, activity_t
 
+
+def plot_saved_visual(path, cfg=cfg):
+    arrays, metadata = load_npz_result(path)
+    plota_todas_amostras(arrays["estrat_t"], arrays["estrat_medio_t"], cfg)
+    plota_payoff_por_estrategia(arrays["payavg_t"], arrays["payavg_medio_t"], cfg)
+    plota_atividade(arrays["activity_t"], arrays["activity_medio_t"], cfg)
+    return metadata
 
 
 
@@ -172,9 +178,6 @@ def monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, image
 
 
 def main():
-    if cfg.seed is not None:
-        np.random.seed(cfg.seed)
-
     L = cfg.L
     total_passos = cfg.total_passos
     total_jog = cfg.total_jog
@@ -185,6 +188,7 @@ def main():
     payoff = np.zeros(total_jog)
     estrat_t = np.zeros((3, amostras, total_passos))
     payavg_t = np.zeros((3, amostras, total_passos))
+    activity_t = np.zeros((amostras, total_passos))
     # Definição de vizinhos
     viz = np.zeros((total_jog, 4), dtype=int)  # matriz contendo os vizinhos 0=cima,1=direita,2=baixo,3=esquerda
     imagegrid = np.zeros((L, L))
@@ -196,19 +200,30 @@ def main():
 
 
 # SIMULAÇÂO!!!
-    estrat_t, payavg_t = monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, imagegrid, payoff_grid, grad_grid, var_grid, total_jog, total_passos, cfg)
+    estrat_t, payavg_t, activity_t = monte_carlo_image(viz, params, estrategia, payoff, estrat_t, payavg_t, activity_t, imagegrid, payoff_grid, grad_grid, var_grid, total_jog, total_passos, cfg)
 
     estrat_medio_t = np.mean(estrat_t, axis=1)
     payavg_medio_t = np.mean(payavg_t, axis=1)
+    activity_medio_t = np.mean(activity_t, axis=0)
 
     plota_todas_amostras(estrat_t, estrat_medio_t,cfg)
     plota_payoff_por_estrategia(payavg_t, payavg_medio_t,cfg)
-#    imprime_dados(estrat_medio_t, total_passos, start_time,cfg)
+    plota_atividade(activity_t, activity_medio_t, cfg)
 
-
-#    plota_todas_amostras(estrat_t, estrat_medio_t)
-#    plota_payoff_por_estrategia(payavg_t, payavg_medio_t)
-#    imprime_dados(estrat_medio_t, total_passos, start_time)
+    metadata = config_metadata(cfg, "visual")
+    output_file = save_npz_result(
+        cfg,
+        "visual",
+        "visual",
+        metadata=metadata,
+        estrat_t=estrat_t,
+        estrat_medio_t=estrat_medio_t,
+        payavg_t=payavg_t,
+        payavg_medio_t=payavg_medio_t,
+        activity_t=activity_t,
+        activity_medio_t=activity_medio_t,
+    )
+    print(f"Dados salvos em: {output_file}")
 
 if __name__ == "__main__":
     main()

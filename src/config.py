@@ -4,13 +4,10 @@ import numpy as np
 
 @dataclass(frozen=True)
 class SimulationConfig:
-    L: int = 200
+    L: int = 100
     amostras: int = 10
-    total_passos: int = 1200
+    total_passos: int = 1000
     percent_avg_MC: float = 0.7  # percent final a tirar media termica
-    seed: int | None = 12345
-    create_snapshot: bool = True
-    deldata: bool = True
     framerate: int = 15
     fpsgif: int = 100
     passo_filma_inicio: int = 0
@@ -21,24 +18,21 @@ class SimulationConfig:
     c: float = 1.0
     sigma: float = 1.05
     alpha: float = 0.35
-
-
-#    param_name = 'r'
     r_start: float = 1.0
-    r_stop: float = 4.5
+    r_stop: float = 4.0
     r_npoints: int = 10
-
-#    param_name = 'alpha'
     alpha_start: float = 0.0
-    alpha_stop: float = 0.6
+    alpha_stop: float = 1.0
     alpha_npoints: int = 10
-
-#    param_name2 = 'sigma'
     sig_start: float = 1.0
-    sig_stop: float = 3.5
+    sig_stop: float = 4.0
     sig_npoints: int = 10
 
-    phaseport: str = 'both'  #sigma, alpha, ou both
+    phaseport: str = 'alpha_sigma'  # r_alpha, r_sigma, alpha_sigma, all
+
+    seed: int | None = 12345
+    create_snapshot: bool = True
+    absorbing_window: int = 10
 
     @property
     def total_jog(self) -> int:

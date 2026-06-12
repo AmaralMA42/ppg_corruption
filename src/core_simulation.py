@@ -2,6 +2,10 @@ import numpy as np
 from numba import jit, prange
 
 
+@jit(nopython=True)
+def seed_numba(seed):
+    np.random.seed(seed)
+
 
 @jit(nopython=True, fastmath=True, parallel=False)
 def inicia_vizinhos(viz, total_jog, L):
@@ -39,7 +43,6 @@ def inicia_estrategias(estrategia, total_jog, L, cond_ini):
                     estrategia[i * L + j] = 2
     elif cond_ini == 2:
         tgangle=0.75
-        #estrategia = np.zeros(total_jog)
         for i in range(0, L):
             for j in range(0, L):
                 estrategia[j * L + i] = 0
@@ -55,46 +58,10 @@ def inicia_estrategias(estrategia, total_jog, L, cond_ini):
         for jogador_atual in range(total_jog):  # Lembete, for in range vai até total_jog-1!!
             estrategia[jogador_atual] = np.random.randint(2)  # Estado inicial do jogador como aleatório
 
-#Versão MAIS eficiente (nível ideal)
-#Atualizar contadores durante a simulação
-# mantém Nc, Nd, Np globais e atualiza quando um jogador muda estratégia
-@jit(nopython=True)
-def calc_fracs(estrategia, total_jog):
-    c = d = p = 0
-    for i in range(total_jog):
-        if estrategia[i] == 0:
-            c += 1
-        elif estrategia[i] == 1:
-            d += 1
-        else:
-            p += 1
-    return c/total_jog, d/total_jog, p/total_jog
-
-@jit(nopython=True)
-def calc_payoff_por_estrategia(estrategia, payoff, total_jog):
-    soma = np.zeros(3)
-    cont = np.zeros(3)
-
-    for i in range(total_jog):
-        e = estrategia[i]
-        soma[e] += payoff[i]
-        cont[e] += 1
-
-    medias = np.zeros(3)
-
-    for i in range(3):
-        if cont[i] > 0:
-            medias[i] = soma[i] / cont[i]
-        else:
-            medias[i] = 0.0
-
-    return medias
-
 @jit(nopython=True)
 def calc_frac_and_payoff(estrategia, payoff, total_jog):
     soma = np.zeros(3)
     count = np.zeros(3)
-    c = d = p = 0
 
     for i in range(total_jog):
         e = estrategia[i]
@@ -111,19 +78,15 @@ def calc_frac_and_payoff(estrategia, payoff, total_jog):
 
 @jit(nopython=True, fastmath=True,  parallel=False)
 def prob_flip(var_pay, k):
-    if var_pay > 0: # todo, evita exploções???
+    if var_pay > 0:
         return 1.0 / (1.0 + np.exp(-var_pay / k))
     else:
         exp_val = np.exp(var_pay / k)
         return exp_val / (1.0 + exp_val)
-    # return 1 / (1 + np.exp(-var_pay / k))
 
 
 @jit(nopython=True, fastmath=True,  parallel=False)
 def public_good_benefit(C, D, P, params):
-    #    L = r*(Nc+Np)/G
-    #    L = (r * (Nc + Np) - sigma * Np) / G
-    #     L = r * (Nc + Np - sigma * Np) / G
     r = params[0]
     G = params[1]
     c = params[2]
@@ -167,18 +130,14 @@ def calcula_payoff(sitio, estrategia, viz, params):
 
     return payoff
 
-# todo olhar!otimizar contagem de fração e
-#todo  payoffs de maneira sequencial, so atualiza dentro do if de estratégia ter sido mudada, mas
-# isso é compleeeexo, entao por hora deixa a cada inicio de passo de monte-carlo, varremos tudo
 @jit(nopython=True, fastmath=True,  parallel=False)
 def atualiza_total_estrat(estrategia, payoff, viz, params, total_jog):
     k = params[4]
+    activity = 0
     for cont in range(0, total_jog):
 
         atual = np.random.randint(0, total_jog)
-#        pay_atual = calcula_payoff(atual, estrategia, viz, params)
         vizsorteado = viz[atual, np.random.randint(0, 4)]  # sorteio de um vizinho aleatório de 0 a 3 #random.randint(0, 3)
-#        pay_viz = calcula_payoff(vizsorteado, estrategia, viz, params)
         if estrategia[atual] != estrategia[vizsorteado]:
             pay_atual = payoff[atual]
             pay_viz = payoff[vizsorteado]
@@ -186,16 +145,11 @@ def atualiza_total_estrat(estrategia, payoff, viz, params, total_jog):
             chance_muda = prob_flip(var_pay, k)  # Probabilidade de fermi
             if np.random.random()<chance_muda:
                 estrategia[atual] = estrategia[vizsorteado]  # mudança da estratégia do sítio central
-    #            atualiza_payoff_local(atual, estrategia, payoff, viz, params)  # primeiros vizinhos
+                activity += 1
                 atualiza_payoff_local_extra(atual, estrategia, payoff, viz, params) #segundos vizinhos
 
+    return activity
 
-@jit(nopython=True)
-def atualiza_payoff_local(atual, estrategia, payoff, viz, params):
-    # pega todos os afetados
-    for i in range(5):
-        temp = atual if i == 0 else viz[atual, i-1]
-        payoff[temp] = calcula_payoff(temp, estrategia, viz, params)
 
 @jit(nopython=True)
 def atualiza_payoff_local_extra(atual, estrategia, payoff, viz, params):
@@ -209,29 +163,22 @@ def atualiza_payoff_local_extra(atual, estrategia, payoff, viz, params):
             v2 = viz[centro, j]
             payoff[v2] = calcula_payoff(v2, estrategia, viz, params)
 
-@jit(nopython=True)
-def mean_payoff(payoff):
-    s = 0.0
-    for i in range(len(payoff)):
-        s += payoff[i]
-    return s / len(payoff)
-
-
-def monte_carlo_single_worker(params, total_jog, total_passos, L, seed):
+def monte_carlo_single_worker(params, total_jog, total_passos, L, seed, absorbing_window=0):
     viz = np.zeros((total_jog, 4), dtype=np.int32)
     inicia_vizinhos(viz, total_jog, L)
 
-    return monte_carlo_single(viz, params, total_jog, total_passos, L, seed)
+    return monte_carlo_single(viz, params, total_jog, total_passos, L, seed, absorbing_window=absorbing_window)
 
-def monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=None):
+def monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=None, absorbing_window=0):
     if seed is not None:
-        np.random.seed(seed)
+        seed_numba(seed)
 
     estrategia = np.zeros(total_jog, dtype=np.int32)
     payoff = np.zeros(total_jog)
 
     estrat_t = np.zeros((3, total_passos))
     payavg_t = np.zeros((3, total_passos))
+    activity_t = np.zeros(total_passos)
 
     inicia_estrategias(estrategia, total_jog, L, params[6])
 
@@ -244,43 +191,21 @@ def monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=N
         estrat_t[:, passo] = frac
         payavg_t[:, passo] = pay
 
-        # teste de figuras dentro
+        # Callback opcional para visualizacao ou diagnostico.
         if callback is not None:
             callback(passo, estrategia, payoff)
 
-        atualiza_total_estrat(estrategia, payoff, viz, params, total_jog)
+        activity_t[passo] = atualiza_total_estrat(estrategia, payoff, viz, params, total_jog) / total_jog
+
+        if absorbing_window > 0 and passo + 1 >= absorbing_window:
+            start = passo + 1 - absorbing_window
+            if np.sum(activity_t[start:passo + 1]) == 0:
+                for future in range(passo + 1, total_passos):
+                    estrat_t[:, future] = estrat_t[:, passo]
+                    payavg_t[:, future] = payavg_t[:, passo]
+                    activity_t[future] = 0
+                break
+
+    return estrat_t, payavg_t, activity_t
 
 
-    return estrat_t, payavg_t
-
-#@jit(nopython=True, fastmath=True,  parallel=False)
-def monte_carlo(amo, viz, params, estrategia, payoff, estrat_t, payavg_t, total_jog, total_passos, L):
-    # Inicio das estratégias para amostra
-    cond_ini = params[6]
-    inicia_estrategias(estrategia, total_jog, L, cond_ini)
-    # inicia os payoffs de cada sítio
-    for i in range(total_jog):
-        payoff[i] = calcula_payoff(i, estrategia, viz, params)
-
-
-    # Começo da simulação de Monte-Carlo
-    for passo_atual in range(0, total_passos):
-        # calcular todas estatísticas da população no passo atual
-#        cfrac, dfrac, pfrac = calc_fracs(estrategia, total_jog)
-#        estrat_t[0, amo, passo_atual] = cfrac
-#        estrat_t[1, amo, passo_atual] = dfrac
-#        estrat_t[2, amo, passo_atual] = pfrac
-#        pay_strat = calc_payoff_por_estrategia(estrategia, payoff, total_jog)
-#        payavg_t[0, amo, passo_atual] = pay_strat[0]  # C
-#        payavg_t[1, amo, passo_atual] = pay_strat[1]  # D
-#        payavg_t[2, amo, passo_atual] = pay_strat[2]  # P
-        # calculo total direto!!!
-        frac, pay_strat = calc_frac_and_payoff(estrategia, payoff, total_jog)
-        for count2 in range(3):
-            payavg_t[count2, amo, passo_atual] = pay_strat[count2]  # C D P
-            estrat_t[count2, amo, passo_atual] = frac[count2]
-
-        # Etapa de atualização da estratégia
-        atualiza_total_estrat(estrategia, payoff, viz, params, total_jog)  # atualiza cada rede individualmente
-
-    return estrat_t, payavg_t
