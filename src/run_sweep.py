@@ -82,7 +82,7 @@ def sweep_1d(cfg, param_name, values, observable_fn):
         print(f"{param_name} = {v}")
 
         cfg_v = replace(cfg, **{param_name: v})
-        estrat_t, _, payavg_t, _, activity_t, _ = run_simulation(cfg_v)
+        estrat_t, _, payavg_t, _, activity_t, _, _ = run_simulation(cfg_v)
 
         traj_strat.append(estrat_t[:, 0, :])
         traj_pay.append(payavg_t[:, 0, :])

@@ -19,7 +19,7 @@ def sweep_2d_all(cfg, param_x, values_x, param_y, values_y):
 
             cfg_v = replace(cfg, **{param_x: vx, param_y: vy})
 
-            estrat_t, _, _, _, _, _ = run_simulation(cfg_v)
+            estrat_t, _, _, _, _, _, _ = run_simulation(cfg_v)
 
             steady = np.mean(
                 estrat_t[:, :, cfg_v.passos_media:], axis=2

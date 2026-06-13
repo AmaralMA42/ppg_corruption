@@ -4,9 +4,9 @@ import numpy as np
 
 @dataclass(frozen=True)
 class SimulationConfig:
-    L: int = 100
+    L: int = 120
     amostras: int = 10
-    total_passos: int = 1000
+    total_passos: int = 1500
     percent_avg_MC: float = 0.7  # percent final a tirar media termica
     framerate: int = 15
     fpsgif: int = 100
@@ -23,10 +23,10 @@ class SimulationConfig:
     r_npoints: int = 10
     alpha_start: float = 0.0
     alpha_stop: float = 1.0
-    alpha_npoints: int = 10
+    alpha_npoints: int = 30
     sig_start: float = 1.0
     sig_stop: float = 4.0
-    sig_npoints: int = 10
+    sig_npoints: int = 30
 
     phaseport: str = 'alpha_sigma'  # r_alpha, r_sigma, alpha_sigma, all
 

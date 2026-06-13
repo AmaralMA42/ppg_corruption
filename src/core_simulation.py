@@ -179,6 +179,7 @@ def monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=N
     estrat_t = np.zeros((3, total_passos))
     payavg_t = np.zeros((3, total_passos))
     activity_t = np.zeros(total_passos)
+    absorbed_at = total_passos
 
     inicia_estrategias(estrategia, total_jog, L, params[6])
 
@@ -200,12 +201,13 @@ def monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=N
         if absorbing_window > 0 and passo + 1 >= absorbing_window:
             start = passo + 1 - absorbing_window
             if np.sum(activity_t[start:passo + 1]) == 0:
+                absorbed_at = passo + 1
                 for future in range(passo + 1, total_passos):
                     estrat_t[:, future] = estrat_t[:, passo]
                     payavg_t[:, future] = payavg_t[:, passo]
                     activity_t[future] = 0
                 break
 
-    return estrat_t, payavg_t, activity_t
+    return estrat_t, payavg_t, activity_t, absorbed_at
 
 

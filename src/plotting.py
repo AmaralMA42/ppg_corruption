@@ -150,6 +150,115 @@ def plota_atividade(activity_t, activity_medio_t, cfg):
     plt.show()
 
 
+def plota_variancia_temporal(variance_samples, variance_mean, cfg):
+    labels = ["C", "D", "P"]
+    colors = ["blue", "red", "green"]
+    x = np.arange(3)
+
+    plt.figure(figsize=(6,4))
+
+    for i in range(3):
+        samples = variance_samples[i, :]
+        valid = np.isfinite(samples)
+        if np.any(valid):
+            jitter = np.linspace(-0.08, 0.08, np.sum(valid))
+            plt.scatter(
+                np.full(np.sum(valid), x[i]) + jitter,
+                samples[valid],
+                alpha=0.35,
+                color=colors[i],
+            )
+        if np.isfinite(variance_mean[i]):
+            plt.scatter(x[i], variance_mean[i], color=colors[i], edgecolor="black", s=80, zorder=3)
+
+    plt.xticks(x, labels)
+    plt.ylabel("Variancia temporal")
+    plt.title("Variancia temporal pos-transiente")
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+def plota_autocorrelacao(autocorr_mean, cfg):
+    labels = ["C", "D", "P"]
+    colors = ["blue", "red", "green"]
+    tau = np.arange(autocorr_mean.shape[1])
+
+    plt.figure(figsize=(7,4))
+
+    for i in range(3):
+        valid = np.isfinite(autocorr_mean[i, :])
+        if np.any(valid):
+            plt.plot(tau[valid], autocorr_mean[i, valid], label=labels[i], color=colors[i])
+
+    plt.axhline(0, color="black", linewidth=0.8, alpha=0.4)
+    plt.xlabel("Lag temporal tau (MCS)")
+    plt.ylabel("C(tau) normalizada")
+    plt.title("Autocorrelacao temporal media")
+    plt.grid(alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+def plota_frequencia_dominante(freq_samples, freq_mean, cfg):
+    labels = ["C", "D", "P"]
+    colors = ["blue", "red", "green"]
+    x = np.arange(3)
+
+    plt.figure(figsize=(6,4))
+
+    for i in range(3):
+        samples = freq_samples[i, :]
+        valid = np.isfinite(samples)
+        if np.any(valid):
+            jitter = np.linspace(-0.08, 0.08, np.sum(valid))
+            plt.scatter(
+                np.full(np.sum(valid), x[i]) + jitter,
+                samples[valid],
+                alpha=0.35,
+                color=colors[i],
+            )
+        if np.isfinite(freq_mean[i]):
+            plt.scatter(x[i], freq_mean[i], color=colors[i], edgecolor="black", s=80, zorder=3)
+
+    plt.xticks(x, labels)
+    plt.ylabel("Frequencia dominante (1/MCS)")
+    plt.title("Frequencia dominante por estrategia")
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+def plota_potencia_dominante(power_samples, power_mean, cfg):
+    labels = ["C", "D", "P"]
+    colors = ["blue", "red", "green"]
+    x = np.arange(3)
+
+    plt.figure(figsize=(6,4))
+
+    for i in range(3):
+        samples = power_samples[i, :]
+        valid = np.isfinite(samples)
+        if np.any(valid):
+            jitter = np.linspace(-0.08, 0.08, np.sum(valid))
+            plt.scatter(
+                np.full(np.sum(valid), x[i]) + jitter,
+                samples[valid],
+                alpha=0.35,
+                color=colors[i],
+            )
+        if np.isfinite(power_mean[i]):
+            plt.scatter(x[i], power_mean[i], color=colors[i], edgecolor="black", s=80, zorder=3)
+
+    plt.xticks(x, labels)
+    plt.ylabel("Potencia do pico dominante")
+    plt.title("Potencia dominante por estrategia")
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
 
 def plota_media_com_erro(steady_state, cfg, tipo='estrategia'):
     amostras = steady_state.shape[1]
