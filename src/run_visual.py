@@ -206,9 +206,10 @@ def main():
     payavg_medio_t = np.mean(payavg_t, axis=1)
     activity_medio_t = np.mean(activity_t, axis=0)
 
-    plota_todas_amostras(estrat_t, estrat_medio_t,cfg)
-    plota_payoff_por_estrategia(payavg_t, payavg_medio_t,cfg)
-    plota_atividade(activity_t, activity_medio_t, cfg)
+    if cfg.make_plots:
+        plota_todas_amostras(estrat_t, estrat_medio_t,cfg)
+        plota_payoff_por_estrategia(payavg_t, payavg_medio_t,cfg)
+        plota_atividade(activity_t, activity_medio_t, cfg)
 
     metadata = config_metadata(cfg, "visual")
     output_file = save_npz_result(

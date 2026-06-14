@@ -4,8 +4,15 @@ from dataclasses import dataclass, replace
 import numpy as np
 
 from config import SimulationConfig
-from plotting import plot_sweep_1d, plot_trajectories_vs_time, plot_activity_trajectories_vs_time, plot_variance_vs_param
+from plotting import (
+    plot_activity_trajectories_vs_time,
+    plot_metric_vs_param,
+    plot_sweep_1d,
+    plot_trajectories_vs_time,
+    plot_variance_vs_param,
+)
 from run_sampling import run_batches
+from time_analysis import analyze_strategy_scalar_metrics
 from utils import config_metadata, load_npz_result, save_npz_result
 
 
@@ -77,12 +84,20 @@ def sweep_1d(cfg, param_name, values, observable_fn):
     vars_sems = []
     varp_means = []
     varp_sems = []
+    dominant_freq_means = []
+    dominant_freq_sems = []
+    dominant_power_means = []
+    dominant_power_sems = []
+    dominant_period_means = []
+    dominant_period_sems = []
+    peak_ratio_means = []
+    peak_ratio_sems = []
 
     for v in values:
         print(f"{param_name} = {v}")
 
         cfg_v = replace(cfg, **{param_name: v})
-        estrat_t, _, payavg_t, _, activity_t, _, _ = run_simulation(cfg_v)
+        estrat_t, _, payavg_t, _, activity_t, _, absorbed_at = run_simulation(cfg_v)
 
         traj_strat.append(estrat_t[:, 0, :])
         traj_pay.append(payavg_t[:, 0, :])
@@ -92,13 +107,40 @@ def sweep_1d(cfg, param_name, values, observable_fn):
         steady_pay = np.mean(payavg_t[:, :, cfg_v.passos_media:], axis=2)
         var_strat = temporal_variance(estrat_t, cfg_v.passos_media)
         var_pay = temporal_variance(payavg_t, cfg_v.passos_media)
+        scalar_analysis = None
+        if cfg_v.compute_time_analysis:
+            scalar_analysis = analyze_strategy_scalar_metrics(
+                estrat_t,
+                start=cfg_v.passos_media,
+                absorbed_at=absorbed_at,
+            )
 
         obs = observable_fn(steady_strat, steady_pay)
 
         means.append(np.mean(obs, axis=1))
         sems.append(sem_across_samples(obs))
-        vars_means.append(np.mean(var_strat, axis=1))
-        vars_sems.append(sem_across_samples(var_strat))
+        if scalar_analysis is None:
+            vars_means.append(np.mean(var_strat, axis=1))
+            vars_sems.append(sem_across_samples(var_strat))
+            dominant_freq_means.append(np.full(3, np.nan))
+            dominant_freq_sems.append(np.full(3, np.nan))
+            dominant_power_means.append(np.full(3, np.nan))
+            dominant_power_sems.append(np.full(3, np.nan))
+            dominant_period_means.append(np.full(3, np.nan))
+            dominant_period_sems.append(np.full(3, np.nan))
+            peak_ratio_means.append(np.full(3, np.nan))
+            peak_ratio_sems.append(np.full(3, np.nan))
+        else:
+            vars_means.append(scalar_analysis["variance_mean"])
+            vars_sems.append(scalar_analysis["variance_sem"])
+            dominant_freq_means.append(scalar_analysis["dominant_freq_mean"])
+            dominant_freq_sems.append(scalar_analysis["dominant_freq_sem"])
+            dominant_power_means.append(scalar_analysis["dominant_power_mean"])
+            dominant_power_sems.append(scalar_analysis["dominant_power_sem"])
+            dominant_period_means.append(scalar_analysis["dominant_period_mean"])
+            dominant_period_sems.append(scalar_analysis["dominant_period_sem"])
+            peak_ratio_means.append(scalar_analysis["peak_ratio_mean"])
+            peak_ratio_sems.append(scalar_analysis["peak_ratio_sem"])
         varp_means.append(np.mean(var_pay, axis=1))
         varp_sems.append(sem_across_samples(var_pay))
 
@@ -112,10 +154,35 @@ def sweep_1d(cfg, param_name, values, observable_fn):
         np.array(vars_sems),
         np.array(varp_means),
         np.array(varp_sems),
+        np.array(dominant_freq_means),
+        np.array(dominant_freq_sems),
+        np.array(dominant_power_means),
+        np.array(dominant_power_sems),
+        np.array(dominant_period_means),
+        np.array(dominant_period_sems),
+        np.array(peak_ratio_means),
+        np.array(peak_ratio_sems),
     )
 
 
-def plot_sweep_results(values, mean, sem, traj_strat, traj_pay, traj_activity, vars_mean, vars_sem, varp_mean, varp_sem, param_name, cfg):
+def plot_sweep_results(
+    values,
+    mean,
+    sem,
+    traj_strat,
+    traj_pay,
+    traj_activity,
+    vars_mean,
+    vars_sem,
+    varp_mean,
+    varp_sem,
+    param_name,
+    cfg,
+    dominant_period_mean=None,
+    dominant_period_sem=None,
+    peak_ratio_mean=None,
+    peak_ratio_sem=None,
+):
     plot_sweep_1d(values, mean, sem, ["C", "D", "P"], param_name, cfg)
     plot_trajectories_vs_time(values, traj_strat, param_name, ylabel="rho")
     plot_trajectories_vs_time(values, traj_pay, param_name, ylabel="Payoff")
@@ -123,6 +190,27 @@ def plot_sweep_results(values, mean, sem, traj_strat, traj_pay, traj_activity, v
     plot_activity_trajectories_vs_time(values, traj_activity, param_name)
     plot_variance_vs_param(values, vars_mean, vars_sem, ["C", "D", "P"], param_name)
     plot_variance_vs_param(values, varp_mean, varp_sem, ["Cpay", "D", "P"], param_name)
+    if dominant_period_mean is not None and np.any(np.isfinite(dominant_period_mean)):
+        plot_metric_vs_param(
+            values,
+            dominant_period_mean,
+            dominant_period_sem,
+            ["C", "D", "P"],
+            param_name,
+            "Periodo dominante (MCS)",
+            "Periodo dominante pos-transiente",
+        )
+    if peak_ratio_mean is not None and np.any(np.isfinite(peak_ratio_mean)):
+        plot_metric_vs_param(
+            values,
+            peak_ratio_mean,
+            peak_ratio_sem,
+            ["C", "D", "P"],
+            param_name,
+            "Peak ratio",
+            "Concentracao espectral no pico dominante",
+            ylim=(0, 1),
+        )
 
 
 def plot_saved_sweep(path, cfg=cfg):
@@ -140,6 +228,10 @@ def plot_saved_sweep(path, cfg=cfg):
         arrays["varp_sem"],
         metadata["param_name"],
         cfg,
+        arrays.get("dominant_period_mean"),
+        arrays.get("dominant_period_sem"),
+        arrays.get("peak_ratio_mean"),
+        arrays.get("peak_ratio_sem"),
     )
     return metadata
 
@@ -152,34 +244,7 @@ def start_sweep(cfg, sweep):
     )
 
     values = sweep.values()
-    mean, sem, traj_strat, traj_pay, traj_activity, vars_mean, vars_sem, varp_mean, varp_sem = sweep_1d(
-        cfg,
-        sweep.param_name,
-        values,
-        observable_fn=obs_fraction,
-    )
-
-    metadata = config_metadata(cfg, "sweep_1d", param_name=sweep.param_name)
-    output_file = save_npz_result(
-        cfg,
-        "sweep_1d",
-        f"sweep_{sweep.param_name}",
-        metadata=metadata,
-        values=values,
-        mean=mean,
-        sem=sem,
-        traj_strat=traj_strat,
-        traj_pay=traj_pay,
-        traj_activity=traj_activity,
-        vars_mean=vars_mean,
-        vars_sem=vars_sem,
-        varp_mean=varp_mean,
-        varp_sem=varp_sem,
-    )
-    print(f"Dados salvos em: {output_file}")
-
-    plot_sweep_results(
-        values,
+    (
         mean,
         sem,
         traj_strat,
@@ -189,9 +254,74 @@ def start_sweep(cfg, sweep):
         vars_sem,
         varp_mean,
         varp_sem,
-        sweep.param_name,
+        dominant_freq_mean,
+        dominant_freq_sem,
+        dominant_power_mean,
+        dominant_power_sem,
+        dominant_period_mean,
+        dominant_period_sem,
+        peak_ratio_mean,
+        peak_ratio_sem,
+    ) = sweep_1d(
         cfg,
+        sweep.param_name,
+        values,
+        observable_fn=obs_fraction,
     )
+
+    metadata = config_metadata(cfg, "sweep_1d", param_name=sweep.param_name)
+    arrays_to_save = {
+        "values": values,
+        "mean": mean,
+        "sem": sem,
+        "traj_strat": traj_strat,
+        "traj_pay": traj_pay,
+        "traj_activity": traj_activity,
+        "vars_mean": vars_mean,
+        "vars_sem": vars_sem,
+        "varp_mean": varp_mean,
+        "varp_sem": varp_sem,
+    }
+    if cfg.compute_time_analysis:
+        arrays_to_save.update({
+            "dominant_freq_mean": dominant_freq_mean,
+            "dominant_freq_sem": dominant_freq_sem,
+            "dominant_power_mean": dominant_power_mean,
+            "dominant_power_sem": dominant_power_sem,
+            "dominant_period_mean": dominant_period_mean,
+            "dominant_period_sem": dominant_period_sem,
+            "peak_ratio_mean": peak_ratio_mean,
+            "peak_ratio_sem": peak_ratio_sem,
+        })
+
+    output_file = save_npz_result(
+        cfg,
+        "sweep_1d",
+        f"sweep_{sweep.param_name}",
+        metadata=metadata,
+        **arrays_to_save,
+    )
+    print(f"Dados salvos em: {output_file}")
+
+    if cfg.make_plots:
+        plot_sweep_results(
+            values,
+            mean,
+            sem,
+            traj_strat,
+            traj_pay,
+            traj_activity,
+            vars_mean,
+            vars_sem,
+            varp_mean,
+            varp_sem,
+            sweep.param_name,
+            cfg,
+            dominant_period_mean,
+            dominant_period_sem,
+            peak_ratio_mean,
+            peak_ratio_sem,
+        )
 
 
 def main():

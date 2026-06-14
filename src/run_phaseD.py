@@ -82,8 +82,9 @@ def run_phase_pair(cfg, param_x, param_y):
     )
     print(f"Dados salvos em: {output_file}")
 
-    plot_heatmap_3(values_x, values_y, Z, param_x, param_y)
-    plot_heatmap_3(values_x, values_y, Z_var, param_x, f"{param_y} variance", "variance")
+    if cfg.make_plots:
+        plot_heatmap_3(values_x, values_y, Z, param_x, param_y)
+        plot_heatmap_3(values_x, values_y, Z_var, param_x, f"{param_y} variance", "variance")
 
     return output_file
 

@@ -153,6 +153,7 @@ def plota_atividade(activity_t, activity_medio_t, cfg):
 def plota_variancia_temporal(variance_samples, variance_mean, cfg):
     labels = ["C", "D", "P"]
     colors = ["blue", "red", "green"]
+    markers = ["o", "s", "^"]
     x = np.arange(3)
 
     plt.figure(figsize=(6,4))
@@ -167,9 +168,10 @@ def plota_variancia_temporal(variance_samples, variance_mean, cfg):
                 samples[valid],
                 alpha=0.35,
                 color=colors[i],
+                marker=markers[i],
             )
         if np.isfinite(variance_mean[i]):
-            plt.scatter(x[i], variance_mean[i], color=colors[i], edgecolor="black", s=80, zorder=3)
+            plt.scatter(x[i], variance_mean[i], color=colors[i], edgecolor="black", marker=markers[i], s=80, zorder=3)
 
     plt.xticks(x, labels)
     plt.ylabel("Variancia temporal")
@@ -201,15 +203,16 @@ def plota_autocorrelacao(autocorr_mean, cfg):
     plt.show()
 
 
-def plota_frequencia_dominante(freq_samples, freq_mean, cfg):
+def plota_periodo_dominante(period_samples, period_mean, cfg):
     labels = ["C", "D", "P"]
     colors = ["blue", "red", "green"]
+    markers = ["D", "P", "X"]
     x = np.arange(3)
 
     plt.figure(figsize=(6,4))
 
     for i in range(3):
-        samples = freq_samples[i, :]
+        samples = period_samples[i, :]
         valid = np.isfinite(samples)
         if np.any(valid):
             jitter = np.linspace(-0.08, 0.08, np.sum(valid))
@@ -218,27 +221,29 @@ def plota_frequencia_dominante(freq_samples, freq_mean, cfg):
                 samples[valid],
                 alpha=0.35,
                 color=colors[i],
+                marker=markers[i],
             )
-        if np.isfinite(freq_mean[i]):
-            plt.scatter(x[i], freq_mean[i], color=colors[i], edgecolor="black", s=80, zorder=3)
+        if np.isfinite(period_mean[i]):
+            plt.scatter(x[i], period_mean[i], color=colors[i], edgecolor="black", marker=markers[i], s=80, zorder=3)
 
     plt.xticks(x, labels)
-    plt.ylabel("Frequencia dominante (1/MCS)")
-    plt.title("Frequencia dominante por estrategia")
+    plt.ylabel("Periodo dominante (MCS)")
+    plt.title("Periodo dominante por estrategia")
     plt.grid(alpha=0.3)
     plt.tight_layout()
     plt.show()
 
 
-def plota_potencia_dominante(power_samples, power_mean, cfg):
+def plota_peak_ratio(peak_ratio_samples, peak_ratio_mean, cfg):
     labels = ["C", "D", "P"]
     colors = ["blue", "red", "green"]
+    markers = ["v", "<", ">"]
     x = np.arange(3)
 
     plt.figure(figsize=(6,4))
 
     for i in range(3):
-        samples = power_samples[i, :]
+        samples = peak_ratio_samples[i, :]
         valid = np.isfinite(samples)
         if np.any(valid):
             jitter = np.linspace(-0.08, 0.08, np.sum(valid))
@@ -247,13 +252,15 @@ def plota_potencia_dominante(power_samples, power_mean, cfg):
                 samples[valid],
                 alpha=0.35,
                 color=colors[i],
+                marker=markers[i],
             )
-        if np.isfinite(power_mean[i]):
-            plt.scatter(x[i], power_mean[i], color=colors[i], edgecolor="black", s=80, zorder=3)
+        if np.isfinite(peak_ratio_mean[i]):
+            plt.scatter(x[i], peak_ratio_mean[i], color=colors[i], edgecolor="black", marker=markers[i], s=80, zorder=3)
 
     plt.xticks(x, labels)
-    plt.ylabel("Potencia do pico dominante")
-    plt.title("Potencia dominante por estrategia")
+    plt.ylim(0, 1)
+    plt.ylabel("Peak ratio")
+    plt.title("Concentracao espectral no pico dominante")
     plt.grid(alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -433,6 +440,29 @@ def plot_variance_vs_param(values, var_mean, var_sem, labels, param_name):
     plt.xlabel(param_name)
     plt.ylabel("Variância temporal")
     plt.title("Flutuações temporais (indicador de ciclos)")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_metric_vs_param(values, metric_mean, metric_sem, labels, param_name, ylabel, title, ylim=None):
+    plt.figure(figsize=(6,4))
+
+    for i in range(3):
+        plt.errorbar(
+            values,
+            metric_mean[:, i],
+            yerr=metric_sem[:, i],
+            label=labels[i],
+            capsize=3
+        )
+
+    plt.xlabel(param_name)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    if ylim is not None:
+        plt.ylim(*ylim)
     plt.legend()
     plt.grid(alpha=0.3)
     plt.tight_layout()
