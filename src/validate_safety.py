@@ -6,6 +6,7 @@ from config import SimulationConfig
 from core_simulation import (
     atualiza_total_estrat,
     calcula_payoff,
+    conta_estrat,
     inicia_estrategias,
     inicia_vizinhos,
     monte_carlo_single,
@@ -209,6 +210,30 @@ def check_cd_initial_condition_has_no_p():
     assert_close("P fraction in C/D limit", estrat_t[2], np.zeros_like(estrat_t[2]))
 
 
+def check_strategy_counter_consistency():
+    L = 7
+    total_jog = L * L
+    viz = np.zeros((total_jog, 4), dtype=np.int32)
+    estrategia = (np.arange(total_jog, dtype=np.int32) % 3).astype(np.int32)
+    inicia_vizinhos(viz, total_jog, L)
+
+    for sitio in range(total_jog):
+        actual = np.array(conta_estrat(sitio, viz, estrategia))
+        group_sites = [
+            int(viz[sitio, 0]),
+            int(viz[sitio, 1]),
+            int(viz[sitio, 2]),
+            int(viz[sitio, 3]),
+            sitio,
+        ]
+        expected = np.array([
+            sum(estrategia[idx] == 0 for idx in group_sites),
+            sum(estrategia[idx] == 1 for idx in group_sites),
+            sum(estrategia[idx] == 2 for idx in group_sites),
+        ])
+        assert_close("strategy counter consistency", actual, expected)
+
+
 def check_local_payoff_consistency():
     cfg = SimulationConfig(
         L=10,
@@ -244,6 +269,7 @@ CHECKS = [
     ("pool_equivalence", check_pool_equivalence),
     ("fraction_invariants", check_fraction_invariants),
     ("cd_initial_condition_has_no_p", check_cd_initial_condition_has_no_p),
+    ("strategy_counter_consistency", check_strategy_counter_consistency),
     ("local_payoff_consistency", check_local_payoff_consistency),
 ]
 

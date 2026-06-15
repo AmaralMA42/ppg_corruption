@@ -95,11 +95,28 @@ def public_good_benefit(C, D, P, params):
 
 @jit(nopython=True, fastmath=True,  parallel=False, cache=True)
 def conta_estrat(sitio, viz, estrategia):
-    vec_estrat = np.zeros(3, dtype=np.int32)  # (C,D,P)
-    for j in range(4):  # Conta quantas estratégias existem no grupo centrado no sítio
-        vec_estrat[estrategia[viz[sitio, j]]] += 1
-    vec_estrat[estrategia[sitio]] += 1
-    return vec_estrat
+    Nc = 0
+    Nd = 0
+    Np = 0
+
+    for j in range(4):  # Conta quantas estrategias existem no grupo centrado no sitio
+        e = estrategia[viz[sitio, j]]
+        if e == 0:
+            Nc += 1
+        elif e == 1:
+            Nd += 1
+        else:
+            Np += 1
+
+    e = estrategia[sitio]
+    if e == 0:
+        Nc += 1
+    elif e == 1:
+        Nd += 1
+    else:
+        Np += 1
+
+    return Nc, Nd, Np
 
 @jit(nopython=True, cache=True)
 def calcula_payoff(sitio, estrategia, viz, params):

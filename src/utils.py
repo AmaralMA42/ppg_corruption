@@ -27,7 +27,10 @@ def save_npz_result(cfg, category, name, metadata=None, **arrays):
     metadata["filename"] = filename.name
     payload["metadata"] = json.dumps(metadata, ensure_ascii=True)
 
-    np.savez_compressed(filename, **payload)
+    if getattr(cfg, "compress_output", False):
+        np.savez_compressed(filename, **payload)
+    else:
+        np.savez(filename, **payload)
     return filename
 
 def load_npz_result(path):

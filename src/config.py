@@ -35,6 +35,7 @@ class SimulationConfig:
     absorbing_window: int = 10
     make_plots: bool = True
     compute_time_analysis: bool = True
+    compress_output: bool = False
 
     @property
     def total_jog(self) -> int:

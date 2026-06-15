@@ -27,9 +27,36 @@ FIGURES_DIR = ROOT_DIR / "figures"
 DATA_DIR.mkdir(exist_ok=True)
 FIGURES_DIR.mkdir(exist_ok=True)
 
+_WORKER_VIZ = None
+_WORKER_VIZ_L = -1
+_WORKER_VIZ_TOTAL_JOG = -1
+
+
+def _get_worker_viz(total_jog, L):
+    global _WORKER_VIZ, _WORKER_VIZ_L, _WORKER_VIZ_TOTAL_JOG
+
+    if (
+        _WORKER_VIZ is None
+        or _WORKER_VIZ_L != L
+        or _WORKER_VIZ_TOTAL_JOG != total_jog
+    ):
+        _WORKER_VIZ = np.zeros((total_jog, 4), dtype=np.int32)
+        inicia_vizinhos(_WORKER_VIZ, total_jog, L)
+        _WORKER_VIZ_L = L
+        _WORKER_VIZ_TOTAL_JOG = total_jog
+
+    return _WORKER_VIZ
+
+
+def _warmup_worker():
+    warm_L = 4
+    warm_total_jog = warm_L * warm_L
+    warm_params = np.array([3.0, 5.0, 1.0, 1.0, 0.1, 0.1, 0.0], dtype=np.float64)
+    _worker(warm_params, warm_total_jog, 1, warm_L, 123, 0)
+
+
 def _worker(params, total_jog, total_passos, L, seed, absorbing_window):
-    viz = np.zeros((total_jog, 4), dtype=np.int32)
-    inicia_vizinhos(viz, total_jog, L)
+    viz = _get_worker_viz(total_jog, L)
 
     return monte_carlo_single(
         viz,
@@ -84,9 +111,10 @@ def collect_batch_results(results):
     )
 
 
-def create_sample_pool(amostras):
+def create_sample_pool(amostras, warmup=True):
     nproc = min(cpu_count(), amostras)
-    return Pool(nproc)
+    initializer = _warmup_worker if warmup else None
+    return Pool(nproc, initializer=initializer)
 
 
 def run_batches(L, amostras, total_passos, params, base_seed=0, absorbing_window=0, pool=None):
