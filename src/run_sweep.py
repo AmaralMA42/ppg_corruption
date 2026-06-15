@@ -11,7 +11,7 @@ from plotting import (
     plot_trajectories_vs_time,
     plot_variance_vs_param,
 )
-from run_sampling import run_batches
+from run_sampling import create_sample_pool, run_batches
 from time_analysis import analyze_strategy_scalar_metrics
 from utils import config_metadata, load_npz_result, save_npz_result
 
@@ -30,7 +30,7 @@ class SweepConfig:
 cfg = SimulationConfig()
 
 
-def run_simulation(cfg):
+def run_simulation(cfg, pool=None):
     params = cfg.simulation_params()
 
     return run_batches(
@@ -40,6 +40,7 @@ def run_simulation(cfg):
         params,
         base_seed=cfg.seed,
         absorbing_window=cfg.absorbing_window,
+        pool=pool,
     )
 
 
@@ -74,7 +75,7 @@ def obs_payoff(steady_strat, steady_pay):
     return steady_pay
 
 
-def sweep_1d(cfg, param_name, values, observable_fn):
+def sweep_1d(cfg, param_name, values, observable_fn, pool=None):
     means = []
     sems = []
     traj_strat = []
@@ -97,7 +98,7 @@ def sweep_1d(cfg, param_name, values, observable_fn):
         print(f"{param_name} = {v}")
 
         cfg_v = replace(cfg, **{param_name: v})
-        estrat_t, _, payavg_t, _, activity_t, _, absorbed_at = run_simulation(cfg_v)
+        estrat_t, _, payavg_t, _, activity_t, _, absorbed_at = run_simulation(cfg_v, pool=pool)
 
         traj_strat.append(estrat_t[:, 0, :])
         traj_pay.append(payavg_t[:, 0, :])
@@ -236,7 +237,11 @@ def plot_saved_sweep(path, cfg=cfg):
     return metadata
 
 
-def start_sweep(cfg, sweep):
+def start_sweep(cfg, sweep, pool=None):
+    if pool is None:
+        with create_sample_pool(cfg.amostras) as local_pool:
+            return start_sweep(cfg, sweep, pool=local_pool)
+
     print(f"\n=== Sweep em {sweep.param_name} ===")
     print(
         f"r={cfg.r}, sigma={cfg.sigma}, alpha={cfg.alpha}, "
@@ -267,6 +272,7 @@ def start_sweep(cfg, sweep):
         sweep.param_name,
         values,
         observable_fn=obs_fraction,
+        pool=pool,
     )
 
     metadata = config_metadata(cfg, "sweep_1d", param_name=sweep.param_name)
@@ -333,8 +339,9 @@ def main():
         SweepConfig("alpha", cfg.alpha_start, cfg.alpha_stop, cfg.alpha_npoints),
     ]
 
-    for sweep in sweeps:
-        start_sweep(cfg, sweep)
+    with create_sample_pool(cfg.amostras) as pool:
+        for sweep in sweeps:
+            start_sweep(cfg, sweep, pool=pool)
 
     print(f"Tempo total: {time.time()-start:.2f}s")
 

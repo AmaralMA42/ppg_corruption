@@ -2,12 +2,12 @@ import numpy as np
 from numba import jit, prange
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def seed_numba(seed):
     np.random.seed(seed)
 
 
-@jit(nopython=True, fastmath=True, parallel=False)
+@jit(nopython=True, fastmath=True, parallel=False, cache=True)
 def inicia_vizinhos(viz, total_jog, L):
     # Inicialização das estratégias e definição de vizinhos
     for jogador_atual in prange(total_jog):  # Lembrete, for in range vai até total_jog-1!!
@@ -26,7 +26,7 @@ def inicia_vizinhos(viz, total_jog, L):
             viz[jogador_atual, 2] = jogador_atual - (L * L - L)
 
 
-@jit(nopython=True, fastmath=True,  parallel=False)
+@jit(nopython=True, fastmath=True,  parallel=False, cache=True)
 def inicia_estrategias(estrategia, total_jog, L, cond_ini):
     # Inicialização das estratégias
     if cond_ini == 0:
@@ -58,7 +58,7 @@ def inicia_estrategias(estrategia, total_jog, L, cond_ini):
         for jogador_atual in range(total_jog):  # Lembete, for in range vai até total_jog-1!!
             estrategia[jogador_atual] = np.random.randint(2)  # Estado inicial do jogador como aleatório
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def calc_frac_and_payoff(estrategia, payoff, total_jog):
     soma = np.zeros(3)
     count = np.zeros(3)
@@ -76,7 +76,7 @@ def calc_frac_and_payoff(estrategia, payoff, total_jog):
 
     return frac, media
 
-@jit(nopython=True, fastmath=True,  parallel=False)
+@jit(nopython=True, fastmath=True,  parallel=False, cache=True)
 def prob_flip(var_pay, k):
     if var_pay > 0:
         return 1.0 / (1.0 + np.exp(-var_pay / k))
@@ -85,7 +85,7 @@ def prob_flip(var_pay, k):
         return exp_val / (1.0 + exp_val)
 
 
-@jit(nopython=True, fastmath=True,  parallel=False)
+@jit(nopython=True, fastmath=True,  parallel=False, cache=True)
 def public_good_benefit(C, D, P, params):
     r = params[0]
     G = params[1]
@@ -93,7 +93,7 @@ def public_good_benefit(C, D, P, params):
     sigma = params[3]
     return float(r * c * (C + P - sigma * P) / G)
 
-@jit(nopython=True, fastmath=True,  parallel=False)
+@jit(nopython=True, fastmath=True,  parallel=False, cache=True)
 def conta_estrat(sitio, viz, estrategia):
     vec_estrat = np.zeros(3, dtype=np.int32)  # (C,D,P)
     for j in range(4):  # Conta quantas estratégias existem no grupo centrado no sítio
@@ -101,7 +101,7 @@ def conta_estrat(sitio, viz, estrategia):
     vec_estrat[estrategia[sitio]] += 1
     return vec_estrat
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def calcula_payoff(sitio, estrategia, viz, params):
     c = params[2]
     sigma = params[3]
@@ -130,7 +130,7 @@ def calcula_payoff(sitio, estrategia, viz, params):
 
     return payoff
 
-@jit(nopython=True, fastmath=True,  parallel=False)
+@jit(nopython=True, fastmath=True,  parallel=False, cache=True)
 def atualiza_total_estrat(estrategia, payoff, viz, params, total_jog):
     k = params[4]
     activity = 0
@@ -151,7 +151,7 @@ def atualiza_total_estrat(estrategia, payoff, viz, params, total_jog):
     return activity
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def atualiza_payoff_local_extra(atual, estrategia, payoff, viz, params):
     # raio 0 e 1
     for i in range(5):

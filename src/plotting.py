@@ -495,8 +495,23 @@ def plot_heatmap_3(X, Y, Z, xlabel, ylabel, mode="fraction"):
         vmin, vmax = 0, 1
     elif mode == "variance":
         cmaps = ["magma", "magma", "magma"]
-        vmin = np.min(Z)
-        vmax = np.max(Z)
+        vmin = np.nanmin(Z) if np.any(np.isfinite(Z)) else 0
+        vmax = np.nanmax(Z) if np.any(np.isfinite(Z)) else 1
+    elif mode == "period":
+        cmaps = ["viridis", "viridis", "viridis"]
+        vmin = np.nanmin(Z) if np.any(np.isfinite(Z)) else 0
+        vmax = np.nanmax(Z) if np.any(np.isfinite(Z)) else 1
+    elif mode == "peak_ratio":
+        cmaps = ["plasma", "plasma", "plasma"]
+        vmin, vmax = 0, 1
+    else:
+        cmaps = ["viridis", "viridis", "viridis"]
+        vmin = np.nanmin(Z) if np.any(np.isfinite(Z)) else 0
+        vmax = np.nanmax(Z) if np.any(np.isfinite(Z)) else 1
+
+    if vmin == vmax:
+        vmax = vmin + 1e-12
+
     fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 
     for k in range(3):

@@ -42,33 +42,36 @@ def _worker(params, total_jog, total_passos, L, seed, absorbing_window):
     )
 
 
-def run_batches(L, amostras, total_passos, params, base_seed=0, absorbing_window=0):
-    total_jog = L * L
-
+def sample_seeds(base_seed, amostras):
     rng = np.random.SeedSequence(base_seed)
     child_seeds = rng.spawn(amostras)
+    return [
+        int(s.generate_state(1, dtype=np.uint32)[0])
+        for s in child_seeds
+    ]
 
-    args = [
+
+def build_worker_args(L, amostras, total_passos, params, base_seed=0, absorbing_window=0):
+    total_jog = L * L
+
+    return [
         (
             params,
             total_jog,
             total_passos,
             L,
-            int(s.generate_state(1, dtype=np.uint32)[0]),
+            seed,
             absorbing_window,
         )
-        for s in child_seeds
+        for seed in sample_seeds(base_seed, amostras)
     ]
 
-    nproc = min(cpu_count(), amostras)
-    with Pool(nproc) as pool:
-        results = pool.starmap(_worker, args)
 
+def collect_batch_results(results):
     estrat_t = np.array([r[0] for r in results]).transpose(1,0,2)
     payavg_t = np.array([r[1] for r in results]).transpose(1,0,2)
     activity_t = np.array([r[2] for r in results])
     absorbed_at = np.array([r[3] for r in results], dtype=np.int64)
-
 
     return (
         estrat_t,
@@ -79,6 +82,30 @@ def run_batches(L, amostras, total_passos, params, base_seed=0, absorbing_window
         np.mean(activity_t, axis=0),
         absorbed_at,
     )
+
+
+def create_sample_pool(amostras):
+    nproc = min(cpu_count(), amostras)
+    return Pool(nproc)
+
+
+def run_batches(L, amostras, total_passos, params, base_seed=0, absorbing_window=0, pool=None):
+    args = build_worker_args(
+        L,
+        amostras,
+        total_passos,
+        params,
+        base_seed=base_seed,
+        absorbing_window=absorbing_window,
+    )
+
+    if pool is None:
+        with create_sample_pool(amostras) as pool:
+            results = pool.starmap(_worker, args)
+    else:
+        results = pool.starmap(_worker, args)
+
+    return collect_batch_results(results)
 
 def plot_saved_sampling(path, cfg=cfg):
     arrays, metadata = load_npz_result(path)
