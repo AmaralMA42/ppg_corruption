@@ -49,8 +49,9 @@ src/
   run_sampling.py     simulacoes multi-amostra
   run_sweep.py        varreduras 1D em r, sigma e alpha
   run_phaseD.py       diagramas de fase 2D
-  run_visual.py       visualizacoes espaciais e GIFs
+  run_visual.py       visualizacoes espaciais e GIFs via callback do core
   plotting.py         rotinas de plotagem
+  time_analysis.py    analise temporal, autocorrelacao e espectro FFT
   utils.py            utilitarios de dados
 ```
 
@@ -66,11 +67,6 @@ Dependencias principais:
 - SciPy
 - Matplotlib
 - Pillow
-
-Dependencias auxiliares usadas por scripts de debug/legado:
-
-- psutil
-- celluloid
 
 Instalacao sugerida:
 
@@ -120,6 +116,8 @@ Gerar visualizacoes espaciais e animacoes:
 python src/run_visual.py
 ```
 
+O visual roda uma amostra unica e usa `monte_carlo_single(..., callback=...)` para registrar snapshots sem duplicar a dinamica do core.
+
 Os parametros principais ficam em [`src/config.py`](src/config.py), na classe `SimulationConfig`.
 
 ## Parametros Principais
@@ -136,6 +134,13 @@ Os parametros principais ficam em [`src/config.py`](src/config.py), na classe `S
 - `sigma`: intensidade da corrupcao/expropriacao.
 - `alpha`: intensidade da redistribuicao clientelista.
 - `cond_ini`: condicao inicial das estrategias.
+- `absorbing_window`: numero de MCS sem atividade antes de encerrar uma amostra absorvida.
+- `compute_time_analysis`: liga/desliga analises temporais pos-transiente.
+- `make_plots`: liga/desliga geracao de graficos durante a execucao.
+- `compress_output`: salva resultados `.npz` comprimidos quando verdadeiro.
+- `freerange`: permite escalas livres nos graficos para destacar variacoes locais.
+- `print_param`: imprime caixas laterais com parametros fixos nos graficos.
+- `fft_max_freq`: limite opcional do eixo de frequencia dos graficos FFT.
 
 ## Saidas
 
@@ -145,7 +150,10 @@ As simulacoes podem produzir:
 - payoff medio por estrategia;
 - medias em estado estacionario apos termalizacao;
 - variancias temporais;
-- arquivos `.dat` e `.npy` em `data/`;
+- autocorrelacao temporal;
+- espectro FFT, periodo dominante e `peak_ratio`;
+- atividade normalizada `A(t) / N` e passo de absorcao `absorbed_at`;
+- arquivos `.npz` em `data/processed/<tipo_de_experimento>/`;
 - figuras, mapas de fase e animacoes em `figures/` ou no diretorio de execucao, dependendo do script.
 
 ## Observaveis Atuais
@@ -153,6 +161,12 @@ As simulacoes podem produzir:
 - fracao media das estrategias;
 - payoff medio por estrategia;
 - variancia temporal;
+- atividade normalizada por MCS;
+- tempo de absorcao por amostra;
+- autocorrelacao temporal pos-transiente;
+- espectro FFT pos-transiente;
+- periodo dominante;
+- `peak_ratio`;
 - trajetorias temporais;
 - mapas 1D e 2D em parametros de controle.
 

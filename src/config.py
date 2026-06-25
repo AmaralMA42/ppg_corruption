@@ -4,31 +4,31 @@ import numpy as np
 
 @dataclass(frozen=True)
 class SimulationConfig:
-    L: int = 100
-    amostras: int = 10
-    total_passos: int = 300
+    L: int = 80
+    amostras: int = 5
+    total_passos: int = 500
     percent_avg_MC: float = 0.6  # percent final a tirar media termica
     framerate: int = 1
     fpsgif: int = 2
     passo_filma_inicio: int = 0
     cond_ini: int = 0   #  0 rand, 1 lines, 2 pizza, 3, 4 C&D
     k: float = 0.1
-    r: float = 2.0
+    r: float = 0.5
     G: int = 5
     c: float = 1.0
-    sigma: float = 2.5
-    alpha: float = 0.3
+    sigma: float = 1.0
+    alpha: float = 0.45
     r_start: float = 0.0
     r_stop: float = 4.0
-    r_npoints: int = 30
+    r_npoints: int = 20
     alpha_start: float = 0.0
     alpha_stop: float = 0.35
     alpha_npoints: int = 30
     sig_start: float = 1.0
-    sig_stop: float = 1.5
-    sig_npoints: int = 30
+    sig_stop: float = 3
+    sig_npoints: int = 20
 
-    phaseport: str = 'all'  # r_alpha, r_sigma, alpha_sigma, all
+    phaseport: str = 'r_sigma'  # r_alpha, r_sigma, alpha_sigma, all
 
     seed: int | None = 12345
     create_snapshot: bool = True
@@ -36,6 +36,9 @@ class SimulationConfig:
     make_plots: bool = True
     compute_time_analysis: bool = True
     compress_output: bool = False
+    freerange: bool = False
+    print_param: bool = True
+    fft_max_freq: float | None = None
 
     @property
     def total_jog(self) -> int:

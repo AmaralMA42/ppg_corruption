@@ -83,19 +83,6 @@ def fixed_length_power_spectrum(series, n_fft, dt=1.0):
     return np.abs(np.fft.rfft(padded)) ** 2 / n
 
 
-def dominant_frequency(series, dt=1.0):
-    freqs, power = power_spectrum(series, dt=dt)
-    if freqs.size <= 1 or np.all(~np.isfinite(power[1:])):
-        return np.nan, np.nan
-
-    candidate_power = power[1:]
-    if np.nanmax(candidate_power) <= 0:
-        return np.nan, np.nan
-
-    idx = int(np.nanargmax(candidate_power)) + 1
-    return freqs[idx], power[idx]
-
-
 def dominant_spectral_metrics(series, dt=1.0):
     freqs, power = power_spectrum(series, dt=dt)
     if freqs.size <= 1 or np.all(~np.isfinite(power[1:])):

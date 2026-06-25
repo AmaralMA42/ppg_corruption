@@ -126,27 +126,28 @@ def run_phase_pair(cfg, param_x, param_y, pool=None):
     print(f"Dados salvos em: {output_file}")
 
     if cfg.make_plots:
-        plot_heatmap_3(values_x, values_y, Z, param_x, param_y)
-        plot_heatmap_3(values_x, values_y, Z_var, param_x, f"{param_y} variance", "variance")
+        plot_heatmap_3(values_x, values_y, Z, param_x, param_y, cfg=cfg)
+        plot_heatmap_3(values_x, values_y, Z_var, param_x, param_y, "variance", cfg=cfg)
         if cfg.compute_time_analysis:
-            plot_heatmap_3(values_x, values_y, Z_period, param_x, f"{param_y} period", "period")
-            plot_heatmap_3(values_x, values_y, Z_peak_ratio, param_x, f"{param_y} peak ratio", "peak_ratio")
+            plot_heatmap_3(values_x, values_y, Z_period, param_x, param_y, "period", cfg=cfg)
+            plot_heatmap_3(values_x, values_y, Z_peak_ratio, param_x, param_y, "peak_ratio", cfg=cfg)
 
     return output_file
 
-def plot_saved_phase(path):
+def plot_saved_phase(path, cfg=cfg):
     arrays, metadata = load_npz_result(path)
     param_x = metadata["param_x"]
     param_y = metadata["param_y"]
 
-    plot_heatmap_3(arrays["values_x"], arrays["values_y"], arrays["Z"], param_x, param_y)
+    plot_heatmap_3(arrays["values_x"], arrays["values_y"], arrays["Z"], param_x, param_y, cfg=cfg)
     plot_heatmap_3(
         arrays["values_x"],
         arrays["values_y"],
         arrays["Z_var"],
         param_x,
-        f"{param_y} variance",
+        param_y,
         "variance",
+        cfg=cfg,
     )
     if "Z_period" in arrays:
         plot_heatmap_3(
@@ -154,8 +155,9 @@ def plot_saved_phase(path):
             arrays["values_y"],
             arrays["Z_period"],
             param_x,
-            f"{param_y} period",
+            param_y,
             "period",
+            cfg=cfg,
         )
     if "Z_peak_ratio" in arrays:
         plot_heatmap_3(
@@ -163,8 +165,9 @@ def plot_saved_phase(path):
             arrays["values_y"],
             arrays["Z_peak_ratio"],
             param_x,
-            f"{param_y} peak ratio",
+            param_y,
             "peak_ratio",
+            cfg=cfg,
         )
     return metadata
 

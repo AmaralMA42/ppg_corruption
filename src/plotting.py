@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 STRATEGY_LABELS = ["C", "D", "P"]
+STRATEGY_LINE_COLORS = ["blue", "red", "green"]
 
 STRATEGY_COLORS = {
     "C": "Blues",
@@ -9,217 +10,267 @@ STRATEGY_COLORS = {
     "P": "Greens",
 }
 
-def plota_dados(estrat_medio_t,cfg):
 
-    plt.figure()
-    plt.title('Evolução média das subpopulações')
-    plt.xlabel('Número de Passos')
-    plt.ylabel(r'$<\rho >$')
-    plt.plot(estrat_medio_t[0, :], label='C')
-    plt.plot(estrat_medio_t[1, :], label='D')
-    plt.plot(estrat_medio_t[2, :], label='P')
-    plt.ylim(0, 1)
-    # salvar parametros nos graficos
-    param_text = (
-        f"L={cfg.L}\n"
-        f"r={cfg.r}\n"
-        f"$\\sigma$={cfg.sigma}\n"
-        f"$\\alpha$={cfg.alpha}\n"
-        f"k={cfg.k}"
-    )
+def _free_range(cfg):
+    return bool(getattr(cfg, "freerange", False))
 
-    plt.text(
-        0.98, 0.02, param_text,
-        transform=plt.gca().transAxes,
+
+def _print_param(cfg):
+    return bool(getattr(cfg, "print_param", True))
+
+
+def _format_param_value(value):
+    if isinstance(value, float):
+        return f"{value:.5g}"
+    return str(value)
+
+
+def param_box_text(cfg, varying_params=()):
+    if cfg is None:
+        return ""
+
+    varying = set(varying_params or ())
+    params = [
+        ("L", "L"),
+        ("T", "total_passos"),
+        ("amostras", "amostras"),
+        ("r", "r"),
+        (r"$\sigma$", "sigma"),
+        (r"$\alpha$", "alpha"),
+        ("k", "k"),
+        ("G", "G"),
+        ("c", "c"),
+    ]
+    lines = []
+    for label, attr in params:
+        if attr in varying or not hasattr(cfg, attr):
+            continue
+        lines.append(f"{label}={_format_param_value(getattr(cfg, attr))}")
+    return "\n".join(lines)
+
+
+def add_param_box(ax, cfg, varying_params=()):
+    if cfg is None or not _print_param(cfg):
+        return False
+
+    text = param_box_text(cfg, varying_params=varying_params)
+    if not text:
+        return False
+
+    ax.text(
+        1.02,
+        0.5,
+        text,
+        transform=ax.transAxes,
         fontsize=9,
-        verticalalignment='bottom',
-        horizontalalignment='right',
-        bbox=dict(boxstyle='round', facecolor='white', alpha=0.6)
+        verticalalignment="center",
+        horizontalalignment="left",
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.7),
     )
-    plt.legend()
+    return True
+
+
+def add_figure_param_box(fig, cfg, varying_params=()):
+    if cfg is None or not _print_param(cfg):
+        return False
+
+    text = param_box_text(cfg, varying_params=varying_params)
+    if not text:
+        return False
+
+    fig.text(
+        0.86,
+        0.5,
+        text,
+        fontsize=9,
+        verticalalignment="center",
+        horizontalalignment="left",
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.7),
+    )
+    return True
+
+
+def finish_layout(fig, has_param_box=False):
+    if has_param_box:
+        fig.tight_layout(rect=[0, 0, 0.82, 1])
+    else:
+        fig.tight_layout()
+
+
+def finite_minmax(values, fallback=(0.0, 1.0)):
+    values = np.asarray(values, dtype=float)
+    valid = np.isfinite(values)
+    if not np.any(valid):
+        return fallback
+
+    vmin = float(np.nanmin(values))
+    vmax = float(np.nanmax(values))
+    if vmin == vmax:
+        delta = max(abs(vmin) * 1e-6, 1e-12)
+        return vmin - delta, vmax + delta
+    return vmin, vmax
+
+
+def plota_dados(estrat_medio_t, cfg):
+    fig = plt.figure()
+    ax = plt.gca()
+    ax.set_title("Evolucao media das subpopulacoes")
+    ax.set_xlabel("Numero de Passos")
+    ax.set_ylabel(r"$<\rho >$")
+    ax.plot(estrat_medio_t[0, :], label="C")
+    ax.plot(estrat_medio_t[1, :], label="D")
+    ax.plot(estrat_medio_t[2, :], label="P")
+    if not _free_range(cfg):
+        ax.set_ylim(0, 1)
+    ax.legend()
+    finish_layout(fig, add_param_box(ax, cfg))
     plt.show()
 
-def plota_todas_amostras(estrat_t, estrat_medio_t,cfg):
-    plt.figure()
 
-    # trajetórias individuais
+def plota_todas_amostras(estrat_t, estrat_medio_t, cfg):
+    fig = plt.figure()
+    ax = plt.gca()
+
     for i in range(estrat_t.shape[1]):
-        plt.plot(estrat_t[0, i, :], alpha=0.2, linestyle='-')
-        plt.plot(estrat_t[1, i, :], alpha=0.2, linestyle='--')
-        plt.plot(estrat_t[2, i, :], alpha=0.2, linestyle=':')
+        ax.plot(estrat_t[0, i, :], alpha=0.2, linestyle="-")
+        ax.plot(estrat_t[1, i, :], alpha=0.2, linestyle="--")
+        ax.plot(estrat_t[2, i, :], alpha=0.2, linestyle=":")
 
-    # média (destacada)
-    plt.plot(estrat_medio_t[0, :], label='C (média)', linewidth=2., color='blue')
-    plt.plot(estrat_medio_t[1, :], label='D (média)', linewidth=2., color='red')
-    plt.plot(estrat_medio_t[2, :], label='P (média)', linewidth=2., color='green')
+    ax.plot(estrat_medio_t[0, :], label="C (media)", linewidth=2.0, color="blue")
+    ax.plot(estrat_medio_t[1, :], label="D (media)", linewidth=2.0, color="red")
+    ax.plot(estrat_medio_t[2, :], label="P (media)", linewidth=2.0, color="green")
 
-    plt.ylim(0, 1)
-    plt.xlabel('Número de Passos')
-    plt.ylabel(r'$\langle \rho \rangle$')
-
-    # parâmetros discretos
-    param_text = (
-        f"L={cfg.L}\n"
-        f"r={cfg.r}\n"
-        f"$\\sigma$={cfg.sigma}\n"
-        f"$\\alpha$={cfg.alpha}\n"
-        f"k={cfg.k}"
-    )
-
-    plt.text(
-        0.98, 0.02, param_text,
-        transform=plt.gca().transAxes,
-        fontsize=9,
-        verticalalignment='bottom',
-        horizontalalignment='right',
-        bbox=dict(boxstyle='round', facecolor='white', alpha=0.6)
-    )
-
-    plt.legend()
+    if not _free_range(cfg):
+        ax.set_ylim(0, 1)
+    ax.set_xlabel("Numero de Passos")
+    ax.set_ylabel(r"$\langle \rho \rangle$")
+    ax.legend()
+    finish_layout(fig, add_param_box(ax, cfg))
     plt.show()
+
 
 def plota_payoff_por_estrategia(payavg_t, payavg_medio_t, cfg):
-    plt.figure()
+    fig = plt.figure()
+    ax = plt.gca()
 
-    # trajetórias individuais
     for i in range(payavg_t.shape[1]):
-        plt.plot(payavg_t[0, i, :], alpha=0.2, linestyle='-')
-        plt.plot(payavg_t[1, i, :], alpha=0.2, linestyle='--')
-        plt.plot(payavg_t[2, i, :], alpha=0.2, linestyle=':')
+        ax.plot(payavg_t[0, i, :], alpha=0.2, linestyle="-")
+        ax.plot(payavg_t[1, i, :], alpha=0.2, linestyle="--")
+        ax.plot(payavg_t[2, i, :], alpha=0.2, linestyle=":")
 
-    # média (destacada)
-    plt.plot(payavg_medio_t[0, :], label='C payoff', linewidth=2.)
-    plt.plot(payavg_medio_t[1, :], label='D payoff', linewidth=2.)
-    plt.plot(payavg_medio_t[2, :], label='P payoff', linewidth=2.)
+    ax.plot(payavg_medio_t[0, :], label="C payoff", linewidth=2.0)
+    ax.plot(payavg_medio_t[1, :], label="D payoff", linewidth=2.0)
+    ax.plot(payavg_medio_t[2, :], label="P payoff", linewidth=2.0)
 
-    plt.xlabel('Número de Passos')
-    plt.ylabel(r'$\langle \Pi \rangle$')
-
-    param_text = (
-        f"L={cfg.L}\n"
-        f"r={cfg.r}\n"
-        f"$\\sigma$={cfg.sigma}\n"
-        f"$\\alpha$={cfg.alpha}\n"
-        f"k={cfg.k}"
-    )
-
-    plt.text(
-        0.98, 0.02, param_text,
-        transform=plt.gca().transAxes,
-        fontsize=9,
-        verticalalignment='bottom',
-        horizontalalignment='right',
-        bbox=dict(boxstyle='round', facecolor='white', alpha=0.6)
-    )
-
-    plt.legend()
+    ax.set_xlabel("Numero de Passos")
+    ax.set_ylabel(r"$\langle \Pi \rangle$")
+    ax.legend()
+    finish_layout(fig, add_param_box(ax, cfg))
     plt.show()
 
 
 def plota_atividade(activity_t, activity_medio_t, cfg):
-    plt.figure()
+    fig = plt.figure()
+    ax = plt.gca()
 
     for i in range(activity_t.shape[0]):
-        plt.plot(activity_t[i, :], alpha=0.25, color="gray")
+        ax.plot(activity_t[i, :], alpha=0.25, color="gray")
 
-    plt.plot(activity_medio_t, label="A(t) media", linewidth=2.0, color="black")
-
-    param_text = (
-        f"L={cfg.L}\n"
-        f"r={cfg.r}\n"
-        f"$\\sigma$={cfg.sigma}\n"
-        f"$\\alpha$={cfg.alpha}\n"
-        f"k={cfg.k}"
-    )
-
-    plt.text(
-        0.98, 0.98, param_text,
-        transform=plt.gca().transAxes,
-        fontsize=9,
-        verticalalignment='top',
-        horizontalalignment='right',
-        bbox=dict(boxstyle='round', facecolor='white', alpha=0.6)
-    )
-
-    plt.xlabel("Numero de Passos")
-    plt.ylabel("A(t) / N")
-    plt.title("Atividade normalizada por MCS")
-    plt.grid(alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
+    ax.plot(activity_medio_t, label="A(t) media", linewidth=2.0, color="black")
+    if not _free_range(cfg):
+        ax.set_ylim(bottom=0)
+    ax.set_xlabel("Numero de Passos")
+    ax.set_ylabel("A(t) / N")
+    ax.set_title("Atividade normalizada por MCS")
+    ax.grid(alpha=0.3)
+    ax.legend()
+    finish_layout(fig, add_param_box(ax, cfg))
     plt.show()
 
 
 def plota_variancia_temporal(variance_samples, variance_mean, cfg):
-    labels = ["C", "D", "P"]
-    colors = ["blue", "red", "green"]
     markers = ["o", "s", "^"]
     x = np.arange(3)
 
-    plt.figure(figsize=(6,4))
+    fig = plt.figure(figsize=(6, 4))
+    ax = plt.gca()
 
     for i in range(3):
         samples = variance_samples[i, :]
         valid = np.isfinite(samples)
         if np.any(valid):
             jitter = np.linspace(-0.08, 0.08, np.sum(valid))
-            plt.scatter(
+            ax.scatter(
                 np.full(np.sum(valid), x[i]) + jitter,
                 samples[valid],
                 alpha=0.35,
-                color=colors[i],
+                color=STRATEGY_LINE_COLORS[i],
                 marker=markers[i],
             )
         if np.isfinite(variance_mean[i]):
-            plt.scatter(x[i], variance_mean[i], color=colors[i], edgecolor="black", marker=markers[i], s=80, zorder=3)
+            ax.scatter(
+                x[i],
+                variance_mean[i],
+                color=STRATEGY_LINE_COLORS[i],
+                edgecolor="black",
+                marker=markers[i],
+                s=80,
+                zorder=3,
+            )
 
-    plt.xticks(x, labels)
-    plt.ylabel("Variancia temporal")
-    plt.title("Variancia temporal pos-transiente")
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
+    if not _free_range(cfg):
+        ax.set_ylim(bottom=0)
+    ax.set_xticks(x, STRATEGY_LABELS)
+    ax.set_ylabel("Variancia temporal")
+    ax.set_title("Variancia temporal pos-transiente")
+    ax.grid(alpha=0.3)
+    finish_layout(fig, add_param_box(ax, cfg))
     plt.show()
 
 
 def plota_autocorrelacao(autocorr_mean, cfg):
-    labels = ["C", "D", "P"]
-    colors = ["blue", "red", "green"]
     tau = np.arange(autocorr_mean.shape[1])
 
-    plt.figure(figsize=(7,4))
+    fig = plt.figure(figsize=(7, 4))
+    ax = plt.gca()
 
     for i in range(3):
         valid = np.isfinite(autocorr_mean[i, :])
         if np.any(valid):
-            plt.plot(tau[valid], autocorr_mean[i, valid], label=labels[i], color=colors[i])
+            ax.plot(tau[valid], autocorr_mean[i, valid], label=STRATEGY_LABELS[i], color=STRATEGY_LINE_COLORS[i])
 
-    plt.axhline(0, color="black", linewidth=0.8, alpha=0.4)
-    plt.xlabel("Lag temporal tau (MCS)")
-    plt.ylabel("C(tau) normalizada")
-    plt.title("Autocorrelacao temporal media")
-    plt.grid(alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
+    if not _free_range(cfg):
+        ax.set_ylim(-1.05, 1.05)
+    ax.axhline(0, color="black", linewidth=0.8, alpha=0.4)
+    ax.set_xlabel("Lag temporal tau (MCS)")
+    ax.set_ylabel("C(tau) normalizada")
+    ax.set_title("Autocorrelacao temporal media")
+    ax.grid(alpha=0.3)
+    ax.legend()
+    finish_layout(fig, add_param_box(ax, cfg))
     plt.show()
 
 
 def plota_fft_power(freqs, power_mean, cfg, power_sem=None):
-    labels = ["C", "D", "P"]
-    colors = ["blue", "red", "green"]
     freqs = np.asarray(freqs, dtype=float)
+    max_freq = getattr(cfg, "fft_max_freq", None)
+    freq_mask = np.isfinite(freqs)
+    if max_freq is not None:
+        freq_mask &= freqs <= max_freq
 
-    plt.figure(figsize=(7,4))
+    fig = plt.figure(figsize=(7, 4))
+    ax = plt.gca()
 
     for i in range(3):
-        valid = np.isfinite(freqs) & np.isfinite(power_mean[i, :])
+        valid = freq_mask & np.isfinite(power_mean[i, :])
         if not np.any(valid):
             continue
 
-        plt.plot(
+        ax.plot(
             freqs[valid],
             power_mean[i, valid],
-            label=labels[i],
-            color=colors[i],
+            label=STRATEGY_LABELS[i],
+            color=STRATEGY_LINE_COLORS[i],
         )
 
         if power_sem is not None:
@@ -228,350 +279,347 @@ def plota_fft_power(freqs, power_mean, cfg, power_sem=None):
             if np.any(sem_valid):
                 lower = np.maximum(power_mean[i, sem_valid] - sem[sem_valid], 0.0)
                 upper = power_mean[i, sem_valid] + sem[sem_valid]
-                plt.fill_between(
+                ax.fill_between(
                     freqs[sem_valid],
                     lower,
                     upper,
-                    color=colors[i],
+                    color=STRATEGY_LINE_COLORS[i],
                     alpha=0.15,
                     linewidth=0,
                 )
 
-    plt.xlabel("Frequencia (1/MCS)")
-    plt.ylabel("Potencia FFT")
-    plt.title("Espectro de potencia medio pos-transiente")
-    plt.grid(alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
+    if not _free_range(cfg):
+        ax.set_ylim(bottom=0)
+    ax.set_xlabel("Frequencia (1/MCS)")
+    ax.set_ylabel("Potencia FFT")
+    ax.set_title("Espectro de potencia medio pos-transiente")
+    ax.grid(alpha=0.3)
+    ax.legend()
+    finish_layout(fig, add_param_box(ax, cfg))
     plt.show()
 
 
 def plota_periodo_dominante(period_samples, period_mean, cfg):
-    labels = ["C", "D", "P"]
-    colors = ["blue", "red", "green"]
     markers = ["D", "P", "X"]
     x = np.arange(3)
 
-    plt.figure(figsize=(6,4))
+    fig = plt.figure(figsize=(6, 4))
+    ax = plt.gca()
 
     for i in range(3):
         samples = period_samples[i, :]
         valid = np.isfinite(samples)
         if np.any(valid):
             jitter = np.linspace(-0.08, 0.08, np.sum(valid))
-            plt.scatter(
+            ax.scatter(
                 np.full(np.sum(valid), x[i]) + jitter,
                 samples[valid],
                 alpha=0.35,
-                color=colors[i],
+                color=STRATEGY_LINE_COLORS[i],
                 marker=markers[i],
             )
         if np.isfinite(period_mean[i]):
-            plt.scatter(x[i], period_mean[i], color=colors[i], edgecolor="black", marker=markers[i], s=80, zorder=3)
+            ax.scatter(
+                x[i],
+                period_mean[i],
+                color=STRATEGY_LINE_COLORS[i],
+                edgecolor="black",
+                marker=markers[i],
+                s=80,
+                zorder=3,
+            )
 
-    plt.xticks(x, labels)
-    plt.ylabel("Periodo dominante (MCS)")
-    plt.title("Periodo dominante por estrategia")
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
+    if not _free_range(cfg):
+        ax.set_ylim(bottom=0)
+    ax.set_xticks(x, STRATEGY_LABELS)
+    ax.set_ylabel("Periodo dominante (MCS)")
+    ax.set_title("Periodo dominante por estrategia")
+    ax.grid(alpha=0.3)
+    finish_layout(fig, add_param_box(ax, cfg))
     plt.show()
 
 
 def plota_peak_ratio(peak_ratio_samples, peak_ratio_mean, cfg):
-    labels = ["C", "D", "P"]
-    colors = ["blue", "red", "green"]
     markers = ["v", "<", ">"]
     x = np.arange(3)
 
-    plt.figure(figsize=(6,4))
+    fig = plt.figure(figsize=(6, 4))
+    ax = plt.gca()
 
     for i in range(3):
         samples = peak_ratio_samples[i, :]
         valid = np.isfinite(samples)
         if np.any(valid):
             jitter = np.linspace(-0.08, 0.08, np.sum(valid))
-            plt.scatter(
+            ax.scatter(
                 np.full(np.sum(valid), x[i]) + jitter,
                 samples[valid],
                 alpha=0.35,
-                color=colors[i],
+                color=STRATEGY_LINE_COLORS[i],
                 marker=markers[i],
             )
         if np.isfinite(peak_ratio_mean[i]):
-            plt.scatter(x[i], peak_ratio_mean[i], color=colors[i], edgecolor="black", marker=markers[i], s=80, zorder=3)
+            ax.scatter(
+                x[i],
+                peak_ratio_mean[i],
+                color=STRATEGY_LINE_COLORS[i],
+                edgecolor="black",
+                marker=markers[i],
+                s=80,
+                zorder=3,
+            )
 
-    plt.xticks(x, labels)
-    plt.ylim(0, 1)
-    plt.ylabel("Peak ratio")
-    plt.title("Concentracao espectral no pico dominante")
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
+    if not _free_range(cfg):
+        ax.set_ylim(0, 1)
+    ax.set_xticks(x, STRATEGY_LABELS)
+    ax.set_ylabel("Peak ratio")
+    ax.set_title("Concentracao espectral no pico dominante")
+    ax.grid(alpha=0.3)
+    finish_layout(fig, add_param_box(ax, cfg))
     plt.show()
 
 
-
-def plota_media_com_erro(steady_state, cfg, tipo='estrategia'):
+def plota_media_com_erro(steady_state, cfg, tipo="estrategia"):
     amostras = steady_state.shape[1]
-
     mean = np.mean(steady_state, axis=1)
     if amostras <= 1:
         sem = np.zeros_like(mean)
     else:
-        std = np.std(steady_state, axis=1, ddof=1)
-        sem = std / np.sqrt(amostras)
+        sem = np.std(steady_state, axis=1, ddof=1) / np.sqrt(amostras)
 
-    labels = ["C", "D", "P"]
     x = np.arange(3)
+    fig = plt.figure(figsize=(6, 4))
+    ax = plt.gca()
+    ax.errorbar(x, mean, yerr=sem, fmt="o", capsize=5)
+    ax.set_xticks(x, STRATEGY_LABELS)
 
-    plt.figure(figsize=(6,4))
-    plt.errorbar(x, mean, yerr=sem, fmt='o', capsize=5)
-    plt.xticks(x, labels)
-    if tipo == 'estrategia':
-        plt.ylabel("Fração média (steady state)")
-        plt.title("Média + erro entre amostras")
-        plt.ylim(0, 1)
-    elif tipo == 'payoff' :
-        plt.ylabel("payoff médio (steady state)")
-        plt.title("Média + erro entre amostras")
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
+    if tipo == "estrategia":
+        ax.set_ylabel("Fracao media (steady state)")
+        ax.set_title("Media + erro entre amostras")
+        if not _free_range(cfg):
+            ax.set_ylim(0, 1)
+    elif tipo == "payoff":
+        ax.set_ylabel("payoff medio (steady state)")
+        ax.set_title("Media + erro entre amostras")
 
-#    plt.savefig(cfg.figures_dir / "media_erro.png", dpi=150)
+    ax.grid(alpha=0.3)
+    finish_layout(fig, add_param_box(ax, cfg))
     plt.show()
 
 
-def plot_vs_r(r_values, mean, sem, output_dir,cfg):
-    labels = ["C", "D", "P"]
-    colors = ["blue", "red", "green"]
-    param_text = (
-        f"L={cfg.L}\n"
-        f"$\\sigma$={cfg.sigma}\n"
-        f"$\\alpha$={cfg.alpha}\n"
-        f"k={cfg.k}"
-    )
-
-    plt.figure(figsize=(6,4))
-    plt.text(
-        0.98, 0.02, param_text,
-        transform=plt.gca().transAxes,
-        fontsize=9,
-        verticalalignment='bottom',
-        horizontalalignment='right',
-        bbox=dict(boxstyle='round', facecolor='white', alpha=0.6)
-    )
+def plot_vs_r(r_values, mean, sem, output_dir, cfg):
+    fig = plt.figure(figsize=(6, 4))
+    ax = plt.gca()
 
     for i in range(3):
-        plt.errorbar(
+        ax.errorbar(
             r_values,
             mean[:, i],
             yerr=sem[:, i],
-            label=labels[i],
+            label=STRATEGY_LABELS[i],
             capsize=3,
-            color=colors[i]
+            color=STRATEGY_LINE_COLORS[i],
         )
 
-    plt.xlabel("r")
-    plt.ylabel("Fração média")
-    plt.title("Dependência em r")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
-
+    if not _free_range(cfg):
+        ax.set_ylim(0, 1)
+    ax.set_xlabel("r")
+    ax.set_ylabel("Fracao media")
+    ax.set_title("Dependencia em r")
+    ax.legend()
+    ax.grid(alpha=0.3)
+    finish_layout(fig, add_param_box(ax, cfg, varying_params=("r",)))
     plt.savefig(output_dir / "vs_r.png", dpi=150)
     plt.show()
 
-def plot_sweep_1d(x, mean, sem, labels, xlabel, cfg):
-    param_text = (
-        f"L={cfg.L}\n"
-        f"$\\sigma$={cfg.sigma}\n"
-        f"$\\alpha$={cfg.alpha}\n"
-        f"k={cfg.k}"
-    )
 
-    plt.figure(figsize=(6,4))
-    plt.text(
-        0.98, 0.02, param_text,
-        transform=plt.gca().transAxes,
-        fontsize=9,
-        verticalalignment='bottom',
-        horizontalalignment='right',
-        bbox=dict(boxstyle='round', facecolor='white', alpha=0.6)
-    )
+def plot_sweep_1d(x, mean, sem, labels, xlabel, cfg):
+    fig = plt.figure(figsize=(6, 4))
+    ax = plt.gca()
 
     for i, label in enumerate(labels):
-        plt.errorbar(x, mean[:, i], yerr=sem[:, i], label=label, capsize=3)
+        ax.errorbar(x, mean[:, i], yerr=sem[:, i], label=label, capsize=3)
 
-    plt.title(f"Dependencia em ={xlabel}\n")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
-    plt.xlabel(xlabel)
-    plt.ylabel("observável médio")
+    if not _free_range(cfg):
+        ax.set_ylim(0, 1)
+    ax.set_title(f"Dependencia em {xlabel}")
+    ax.legend()
+    ax.grid(alpha=0.3)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("observavel medio")
+    finish_layout(fig, add_param_box(ax, cfg, varying_params=(xlabel,)))
     plt.show()
 
-def plot_trajectories_vs_time(values, traj, param_name, ylabel, step=1):
-    """
-    traj: (n_values, 3, T)
-    """
 
+def plot_trajectories_vs_time(values, traj, param_name, ylabel, cfg=None, step=1):
     step = max(int(step), 1)
-    T = traj.shape[2]
-    x = np.arange(T)
+    t = np.arange(traj.shape[2])
 
-    labels = ["C", "D", "P"]
-    colors = ["blue", "red", "green"]
-
-    plt.figure(figsize=(8,5))
+    fig = plt.figure(figsize=(8, 5))
+    ax = plt.gca()
 
     for idx in range(0, len(values), step):
         val = values[idx]
         for s in range(3):
-            plt.plot(
-                x,
+            ax.plot(
+                t,
                 traj[idx, s],
-                color=colors[s],
+                color=STRATEGY_LINE_COLORS[s],
                 alpha=0.3,
-                label=f"{labels[s]}, {param_name}={val:.2f}" if idx == 0 else None
+                label=f"{STRATEGY_LABELS[s]}, {param_name}={val:.2f}" if idx == 0 else None,
             )
 
-    plt.xlabel("Monte Carlo step")
-    plt.ylabel(ylabel)
-    plt.title(f"Evolução temporal (varrendo {param_name})")
-
-    # legenda só uma vez
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
+    if ylabel == "rho" and cfg is not None and not _free_range(cfg):
+        ax.set_ylim(0, 1)
+    ax.set_xlabel("Monte Carlo step")
+    ax.set_ylabel(ylabel)
+    ax.set_title(f"Evolucao temporal (varrendo {param_name})")
+    ax.legend()
+    ax.grid(alpha=0.3)
+    finish_layout(fig, add_param_box(ax, cfg, varying_params=(param_name,)))
     plt.show()
 
 
-def plot_activity_trajectories_vs_time(values, traj_activity, param_name, step=1):
+def plot_activity_trajectories_vs_time(values, traj_activity, param_name, cfg=None, step=1):
     step = max(int(step), 1)
-    T = traj_activity.shape[1]
-    x = np.arange(T)
+    t = np.arange(traj_activity.shape[1])
 
-    plt.figure(figsize=(8,5))
+    fig = plt.figure(figsize=(8, 5))
+    ax = plt.gca()
 
     for idx in range(0, len(values), step):
-        plt.plot(
-            x,
+        ax.plot(
+            t,
             traj_activity[idx],
             alpha=0.45,
-            label=f"{param_name}={values[idx]:.2f}" if idx == 0 else None
+            label=f"{param_name}={values[idx]:.2f}" if idx == 0 else None,
         )
 
-    plt.xlabel("Monte Carlo step")
-    plt.ylabel("A(t) / N")
-    plt.title(f"Atividade normalizada temporal (varrendo {param_name})")
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
+    if cfg is not None and not _free_range(cfg):
+        ax.set_ylim(bottom=0)
+    ax.set_xlabel("Monte Carlo step")
+    ax.set_ylabel("A(t) / N")
+    ax.set_title(f"Atividade normalizada temporal (varrendo {param_name})")
+    ax.grid(alpha=0.3)
+    finish_layout(fig, add_param_box(ax, cfg, varying_params=(param_name,)))
     plt.show()
 
 
-def plot_variance_vs_param(values, var_mean, var_sem, labels, param_name):
-    plt.figure(figsize=(6,4))
+def plot_variance_vs_param(values, var_mean, var_sem, labels, param_name, cfg=None):
+    fig = plt.figure(figsize=(6, 4))
+    ax = plt.gca()
 
     for i in range(3):
-        plt.errorbar(
-            values,
-            var_mean[:, i],
-            yerr=var_sem[:, i],
-            label=labels[i],
-            capsize=3
-        )
+        ax.errorbar(values, var_mean[:, i], yerr=var_sem[:, i], label=labels[i], capsize=3)
 
-    plt.xlabel(param_name)
-    plt.ylabel("Variância temporal")
-    plt.title("Flutuações temporais (indicador de ciclos)")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
+    if cfg is not None and not _free_range(cfg):
+        ax.set_ylim(bottom=0)
+    ax.set_xlabel(param_name)
+    ax.set_ylabel("Variancia temporal")
+    ax.set_title("Flutuacoes temporais (indicador de ciclos)")
+    ax.legend()
+    ax.grid(alpha=0.3)
+    finish_layout(fig, add_param_box(ax, cfg, varying_params=(param_name,)))
     plt.show()
 
 
-def plot_metric_vs_param(values, metric_mean, metric_sem, labels, param_name, ylabel, title, ylim=None):
-    plt.figure(figsize=(6,4))
+def plot_metric_vs_param(values, metric_mean, metric_sem, labels, param_name, ylabel, title, ylim=None, cfg=None):
+    fig = plt.figure(figsize=(6, 4))
+    ax = plt.gca()
 
     for i in range(3):
-        plt.errorbar(
-            values,
-            metric_mean[:, i],
-            yerr=metric_sem[:, i],
-            label=labels[i],
-            capsize=3
-        )
+        ax.errorbar(values, metric_mean[:, i], yerr=metric_sem[:, i], label=labels[i], capsize=3)
 
-    plt.xlabel(param_name)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    if ylim is not None:
-        plt.ylim(*ylim)
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
+    ax.set_xlabel(param_name)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    if ylim is not None and (cfg is None or not _free_range(cfg)):
+        ax.set_ylim(*ylim)
+    ax.legend()
+    ax.grid(alpha=0.3)
+    finish_layout(fig, add_param_box(ax, cfg, varying_params=(param_name,)))
     plt.show()
 
 
-def plot_heatmap(X, Y, Z, xlabel, ylabel, title=""):
-    plt.figure(figsize=(6, 5))
+def plot_heatmap(X, Y, Z, xlabel, ylabel, title="", cfg=None, mode="fraction"):
+    fig = plt.figure(figsize=(6, 5))
+    ax = plt.gca()
+    vmin, vmax = heatmap_limits(Z, mode, cfg)
 
-    im = plt.imshow(
+    im = ax.imshow(
         Z.T,
-        origin='lower',
-        aspect='auto',
+        origin="lower",
+        aspect="auto",
         extent=[X[0], X[-1], Y[0], Y[-1]],
+        vmin=vmin,
+        vmax=vmax,
     )
 
-    plt.colorbar(im, label=r"$\rho_C$")
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-
-    plt.tight_layout()
+    fig.colorbar(im, ax=ax, label=r"$\rho_C$")
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    finish_layout(fig, add_param_box(ax, cfg, varying_params=(xlabel, ylabel)))
     plt.show()
 
 
-def plot_heatmap_3(X, Y, Z, xlabel, ylabel, mode="fraction"):
-    labels = ["C", "D", "P"]
-    if mode == "fraction":
-        cmaps = ["Blues", "Reds", "Greens"]
-        vmin, vmax = 0, 1
-    elif mode == "variance":
-        cmaps = ["magma", "magma", "magma"]
-        vmin = np.nanmin(Z) if np.any(np.isfinite(Z)) else 0
-        vmax = np.nanmax(Z) if np.any(np.isfinite(Z)) else 1
-    elif mode == "period":
-        cmaps = ["viridis", "viridis", "viridis"]
-        vmin = np.nanmin(Z) if np.any(np.isfinite(Z)) else 0
-        vmax = np.nanmax(Z) if np.any(np.isfinite(Z)) else 1
-    elif mode == "peak_ratio":
-        cmaps = ["plasma", "plasma", "plasma"]
-        vmin, vmax = 0, 1
-    else:
-        cmaps = ["viridis", "viridis", "viridis"]
-        vmin = np.nanmin(Z) if np.any(np.isfinite(Z)) else 0
-        vmax = np.nanmax(Z) if np.any(np.isfinite(Z)) else 1
+def heatmap_limits(Z, mode, cfg):
+    if _free_range(cfg):
+        return finite_minmax(Z)
+    if mode in ("fraction", "peak_ratio"):
+        return 0, 1
+    return finite_minmax(Z)
 
-    if vmin == vmax:
-        vmax = vmin + 1e-12
+
+def heatmap_cmaps(mode):
+    if mode == "fraction":
+        return ["Blues", "Reds", "Greens"]
+    if mode == "variance":
+        return ["turbo", "turbo", "turbo"]
+    if mode == "period":
+        return ["Spectral_r", "Spectral_r", "Spectral_r"]
+    if mode == "peak_ratio":
+        return ["plasma", "plasma", "plasma"]
+    return ["viridis", "viridis", "viridis"]
+
+
+def heatmap_colorbar_label(mode):
+    if mode == "fraction":
+        return "fracao media"
+    if mode == "variance":
+        return "variancia temporal"
+    if mode == "period":
+        return "periodo dominante (MCS)"
+    if mode == "peak_ratio":
+        return "peak ratio"
+    return mode
+
+
+def plot_heatmap_3(X, Y, Z, xlabel, ylabel, mode="fraction", cfg=None, varying_params=None):
+    cmaps = heatmap_cmaps(mode)
+    vmin, vmax = heatmap_limits(Z, mode, cfg)
+    if varying_params is None:
+        varying_params = (xlabel, ylabel)
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 
     for k in range(3):
+        panel_vmin, panel_vmax = finite_minmax(Z[:, :, k]) if _free_range(cfg) else (vmin, vmax)
         im = axes[k].imshow(
             Z[:, :, k].T,
-            origin='lower',
-            aspect='auto',
+            origin="lower",
+            aspect="auto",
             extent=[X[0], X[-1], Y[0], Y[-1]],
             cmap=cmaps[k],
-            vmin=vmin, vmax=vmax
+            vmin=panel_vmin,
+            vmax=panel_vmax,
         )
 
-        axes[k].set_title(f"ρ_{labels[k]} ({mode})")
+        axes[k].set_title(f"rho_{STRATEGY_LABELS[k]} ({mode})")
         axes[k].set_xlabel(xlabel)
         axes[k].set_ylabel(ylabel)
+        fig.colorbar(im, ax=axes[k], label=heatmap_colorbar_label(mode))
 
-        fig.colorbar(im, ax=axes[k])
-
-    plt.tight_layout()
+    has_param_box = add_figure_param_box(fig, cfg, varying_params=varying_params)
+    finish_layout(fig, has_param_box)
     plt.show()

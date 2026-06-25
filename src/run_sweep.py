@@ -71,10 +71,6 @@ def obs_fraction(steady_strat, steady_pay):
     return steady_strat
 
 
-def obs_payoff(steady_strat, steady_pay):
-    return steady_pay
-
-
 def sweep_1d(cfg, param_name, values, observable_fn, pool=None):
     means = []
     sems = []
@@ -185,12 +181,12 @@ def plot_sweep_results(
     peak_ratio_sem=None,
 ):
     plot_sweep_1d(values, mean, sem, ["C", "D", "P"], param_name, cfg)
-    plot_trajectories_vs_time(values, traj_strat, param_name, ylabel="rho")
-    plot_trajectories_vs_time(values, traj_pay, param_name, ylabel="Payoff")
-    plot_trajectories_vs_time(values, traj_pay, param_name, ylabel="Payoff", step=10)
-    plot_activity_trajectories_vs_time(values, traj_activity, param_name)
-    plot_variance_vs_param(values, vars_mean, vars_sem, ["C", "D", "P"], param_name)
-    plot_variance_vs_param(values, varp_mean, varp_sem, ["Cpay", "D", "P"], param_name)
+    plot_trajectories_vs_time(values, traj_strat, param_name, ylabel="rho", cfg=cfg)
+    plot_trajectories_vs_time(values, traj_pay, param_name, ylabel="Payoff", cfg=cfg)
+    plot_trajectories_vs_time(values, traj_pay, param_name, ylabel="Payoff", cfg=cfg, step=10)
+    plot_activity_trajectories_vs_time(values, traj_activity, param_name, cfg=cfg)
+    plot_variance_vs_param(values, vars_mean, vars_sem, ["C", "D", "P"], param_name, cfg=cfg)
+    plot_variance_vs_param(values, varp_mean, varp_sem, ["Cpay", "D", "P"], param_name, cfg=cfg)
     if dominant_period_mean is not None and np.any(np.isfinite(dominant_period_mean)):
         plot_metric_vs_param(
             values,
@@ -200,6 +196,7 @@ def plot_sweep_results(
             param_name,
             "Periodo dominante (MCS)",
             "Periodo dominante pos-transiente",
+            cfg=cfg,
         )
     if peak_ratio_mean is not None and np.any(np.isfinite(peak_ratio_mean)):
         plot_metric_vs_param(
@@ -211,6 +208,7 @@ def plot_sweep_results(
             "Peak ratio",
             "Concentracao espectral no pico dominante",
             ylim=(0, 1),
+            cfg=cfg,
         )
 
 

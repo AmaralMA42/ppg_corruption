@@ -160,14 +160,19 @@ Esse e um criterio fundamental de validacao.
 - fracao media das estrategias;
 - payoff medio por estrategia;
 - variancia temporal;
-- trajetorias temporais.
+- atividade normalizada por MCS;
+- tempo de absorcao por amostra;
+- autocorrelacao temporal;
+- FFT/espectro temporal;
+- periodo dominante;
+- concentracao espectral do pico dominante;
+- trajetorias temporais;
+- diagramas de fase para fracoes, variancia temporal e metricas espectrais.
 
 ## Observaveis Futuros
 
 - susceptibility;
 - Binder cumulant;
-- autocorrelacao temporal;
-- FFT/espectro temporal;
 - distribuicao de clusters;
 - lifetime de dominios;
 - avalanche statistics;

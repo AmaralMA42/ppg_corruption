@@ -8,9 +8,11 @@ from validate_safety import main as run_safety_checks
 CRITICAL_MODULES = [
     "config.py",
     "core_simulation.py",
+    "plotting.py",
     "run_sampling.py",
     "run_sweep.py",
     "run_phaseD.py",
+    "run_visual.py",
     "time_analysis.py",
     "utils.py",
     "validate_safety.py",

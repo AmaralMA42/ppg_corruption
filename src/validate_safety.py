@@ -18,6 +18,7 @@ from run_sampling import (
     run_batches,
     sample_seeds,
 )
+from run_visual import run_visual_simulation
 
 
 ATOL = 1e-10
@@ -264,6 +265,39 @@ def check_local_payoff_consistency():
         assert_close("local payoff update consistency", payoff, fresh)
 
 
+def check_visual_matches_core_simulation():
+    cfg = SimulationConfig(
+        L=8,
+        amostras=1,
+        total_passos=12,
+        seed=606,
+        create_snapshot=False,
+        absorbing_window=0,
+        make_plots=False,
+        compute_time_analysis=False,
+    )
+    params = cfg.simulation_params()
+    total_jog = cfg.total_jog
+    viz = np.zeros((total_jog, 4), dtype=np.int32)
+    inicia_vizinhos(viz, total_jog, cfg.L)
+
+    core_result = monte_carlo_single(
+        viz,
+        params,
+        total_jog,
+        cfg.total_passos,
+        cfg.L,
+        cfg.seed,
+        absorbing_window=cfg.absorbing_window,
+    )
+    visual_result = run_visual_simulation(cfg)
+
+    assert_close("visual strategy trajectory", visual_result[0][:, 0, :], core_result[0])
+    assert_close("visual payoff trajectory", visual_result[2][:, 0, :], core_result[1])
+    assert_close("visual activity trajectory", visual_result[4][0, :], core_result[2])
+    assert_close("visual absorbed_at", visual_result[6], np.array([core_result[3]], dtype=np.int64))
+
+
 CHECKS = [
     ("seed_repeatability", check_seed_repeatability),
     ("pool_equivalence", check_pool_equivalence),
@@ -271,6 +305,7 @@ CHECKS = [
     ("cd_initial_condition_has_no_p", check_cd_initial_condition_has_no_p),
     ("strategy_counter_consistency", check_strategy_counter_consistency),
     ("local_payoff_consistency", check_local_payoff_consistency),
+    ("visual_matches_core_simulation", check_visual_matches_core_simulation),
 ]
 
 

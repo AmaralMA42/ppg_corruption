@@ -180,12 +180,6 @@ def atualiza_payoff_local_extra(atual, estrategia, payoff, viz, params):
             v2 = viz[centro, j]
             payoff[v2] = calcula_payoff(v2, estrategia, viz, params)
 
-def monte_carlo_single_worker(params, total_jog, total_passos, L, seed, absorbing_window=0):
-    viz = np.zeros((total_jog, 4), dtype=np.int32)
-    inicia_vizinhos(viz, total_jog, L)
-
-    return monte_carlo_single(viz, params, total_jog, total_passos, L, seed, absorbing_window=absorbing_window)
-
 def monte_carlo_single(viz, params, total_jog, total_passos, L, seed, callback=None, absorbing_window=0):
     if seed is not None:
         seed_numba(seed)
