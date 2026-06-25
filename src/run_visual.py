@@ -7,7 +7,12 @@ from scipy.ndimage import uniform_filter
 
 from config import SimulationConfig
 from core_simulation import inicia_vizinhos, monte_carlo_single
-from plotting import plota_atividade, plota_payoff_por_estrategia, plota_todas_amostras
+from plotting import (
+    plota_atividade,
+    plota_payoff_por_estrategia,
+    plota_simplex_estrategias,
+    plota_todas_amostras,
+)
 from utils import config_metadata, load_npz_result, save_npz_result
 
 
@@ -205,6 +210,7 @@ def run_visual_simulation(cfg, output_dir=None):
 def plot_saved_visual(path, cfg=cfg):
     arrays, metadata = load_npz_result(path)
     plota_todas_amostras(arrays["estrat_t"], arrays["estrat_medio_t"], cfg)
+    plota_simplex_estrategias(arrays["estrat_t"], arrays["estrat_medio_t"], cfg)
     plota_payoff_por_estrategia(arrays["payavg_t"], arrays["payavg_medio_t"], cfg)
     plota_atividade(arrays["activity_t"], arrays["activity_medio_t"], cfg)
     return metadata
@@ -223,6 +229,7 @@ def main():
 
     if cfg.make_plots:
         plota_todas_amostras(estrat_t, estrat_medio_t, cfg)
+        plota_simplex_estrategias(estrat_t, estrat_medio_t, cfg)
         plota_payoff_por_estrategia(payavg_t, payavg_medio_t, cfg)
         plota_atividade(activity_t, activity_medio_t, cfg)
 

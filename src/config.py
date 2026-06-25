@@ -8,16 +8,13 @@ class SimulationConfig:
     amostras: int = 5
     total_passos: int = 500
     percent_avg_MC: float = 0.6  # percent final a tirar media termica
-    framerate: int = 1
-    fpsgif: int = 2
-    passo_filma_inicio: int = 0
-    cond_ini: int = 0   #  0 rand, 1 lines, 2 pizza, 3, 4 C&D
+    cond_ini: int = 0   #  0 rand, 1 lines, 2 pizza, 3 ????, 4 C&D
     k: float = 0.1
-    r: float = 0.5
+    r: float = 2.7
     G: int = 5
     c: float = 1.0
-    sigma: float = 1.0
-    alpha: float = 0.45
+    sigma: float = 1.02
+    alpha: float = 0.25
     r_start: float = 0.0
     r_stop: float = 4.0
     r_npoints: int = 20
@@ -30,15 +27,18 @@ class SimulationConfig:
 
     phaseport: str = 'r_sigma'  # r_alpha, r_sigma, alpha_sigma, all
 
+    framerate: int = 10
+    fpsgif: int = 2
+    passo_filma_inicio: int = 0
     seed: int | None = 12345
     create_snapshot: bool = True
     absorbing_window: int = 10
     make_plots: bool = True
     compute_time_analysis: bool = True
     compress_output: bool = False
-    freerange: bool = False
+    freerange: bool = True
     print_param: bool = True
-    fft_max_freq: float | None = None
+    fft_max_freq: float= 0.2# | None = None
 
     @property
     def total_jog(self) -> int:

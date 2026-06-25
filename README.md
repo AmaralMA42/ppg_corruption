@@ -147,6 +147,7 @@ Os parametros principais ficam em [`src/config.py`](src/config.py), na classe `S
 As simulacoes podem produzir:
 
 - trajetorias temporais das fracoes `rho_C`, `rho_D` e `rho_P`;
+- trajetorias no simplex de estrategias `C-D-P`;
 - payoff medio por estrategia;
 - medias em estado estacionario apos termalizacao;
 - variancias temporais;
@@ -168,6 +169,7 @@ As simulacoes podem produzir:
 - periodo dominante;
 - `peak_ratio`;
 - trajetorias temporais;
+- trajetorias no simplex de estrategias;
 - mapas 1D e 2D em parametros de controle.
 
 ## Objetivos

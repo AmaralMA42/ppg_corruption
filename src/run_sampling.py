@@ -13,6 +13,7 @@ from plotting import (
     plota_peak_ratio,
     plota_payoff_por_estrategia,
     plota_periodo_dominante,
+    plota_simplex_estrategias,
     plota_todas_amostras,
     plota_variancia_temporal,
 )
@@ -139,6 +140,7 @@ def run_batches(L, amostras, total_passos, params, base_seed=0, absorbing_window
 def plot_saved_sampling(path, cfg=cfg):
     arrays, metadata = load_npz_result(path)
     plota_todas_amostras(arrays["estrat_t"], arrays["estrat_medio"], cfg)
+    plota_simplex_estrategias(arrays["estrat_t"], arrays["estrat_medio"], cfg)
     plota_payoff_por_estrategia(arrays["payavg_t"], arrays["payavg_medio"], cfg)
     plota_atividade(arrays["activity_t"], arrays["activity_medio"], cfg)
     plota_media_com_erro(arrays["steady_state"], cfg)
@@ -188,6 +190,7 @@ def main():
 
     if cfg.make_plots:
         plota_todas_amostras(estrat_t, estrat_medio, cfg)
+        plota_simplex_estrategias(estrat_t, estrat_medio, cfg)
         plota_payoff_por_estrategia(payavg_t, payavg_medio, cfg)
         plota_atividade(activity_t, activity_medio, cfg)
     # Media temporal apos a termalizacao.

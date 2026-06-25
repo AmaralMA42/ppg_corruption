@@ -149,6 +149,49 @@ def plota_todas_amostras(estrat_t, estrat_medio_t, cfg):
     plt.show()
 
 
+def simplex_coordinates(strategy_fractions):
+    rho = np.asarray(strategy_fractions, dtype=float)
+    x = rho[1, :] + 0.5 * rho[2, :]
+    y = (np.sqrt(3.0) / 2.0) * rho[2, :]
+    return x, y
+
+
+def plota_simplex_estrategias(estrat_t, estrat_medio_t, cfg):
+    fig = plt.figure(figsize=(6, 5.6))
+    ax = plt.gca()
+
+    vertices = np.array([
+        [0.0, 0.0],
+        [1.0, 0.0],
+        [0.5, np.sqrt(3.0) / 2.0],
+    ])
+    triangle = np.vstack([vertices, vertices[0]])
+    ax.plot(triangle[:, 0], triangle[:, 1], color="black", linewidth=1.0)
+
+    for i in range(estrat_t.shape[1]):
+        x, y = simplex_coordinates(estrat_t[:, i, :])
+        ax.plot(x, y, color="gray", alpha=0.22, linewidth=1.0)
+
+    x_mean, y_mean = simplex_coordinates(estrat_medio_t)
+    ax.plot(x_mean, y_mean, color="black", linewidth=1.4, label="media")
+    ax.scatter(x_mean[0], y_mean[0], color="black", s=36, marker="o", zorder=4, label="inicio")
+    ax.scatter(x_mean[-1], y_mean[-1], color="black", s=54, marker="X", zorder=4, label="fim")
+
+    ax.text(-0.04, -0.04, "C", ha="right", va="top", fontsize=12, color="blue")
+    ax.text(1.04, -0.04, "D", ha="left", va="top", fontsize=12, color="red")
+    ax.text(0.5, np.sqrt(3.0) / 2.0 + 0.04, "P", ha="center", va="bottom", fontsize=12, color="green")
+
+    ax.set_xlim(-0.08, 1.08)
+    ax.set_ylim(-0.08, np.sqrt(3.0) / 2.0 + 0.1)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title("Trajetoria no simplex C-D-P")
+    ax.legend(loc="lower center", ncol=3, frameon=False)
+    finish_layout(fig, add_param_box(ax, cfg))
+    plt.show()
+
+
 def plota_payoff_por_estrategia(payavg_t, payavg_medio_t, cfg):
     fig = plt.figure()
     ax = plt.gca()
