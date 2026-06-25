@@ -203,6 +203,49 @@ def plota_autocorrelacao(autocorr_mean, cfg):
     plt.show()
 
 
+def plota_fft_power(freqs, power_mean, cfg, power_sem=None):
+    labels = ["C", "D", "P"]
+    colors = ["blue", "red", "green"]
+    freqs = np.asarray(freqs, dtype=float)
+
+    plt.figure(figsize=(7,4))
+
+    for i in range(3):
+        valid = np.isfinite(freqs) & np.isfinite(power_mean[i, :])
+        if not np.any(valid):
+            continue
+
+        plt.plot(
+            freqs[valid],
+            power_mean[i, valid],
+            label=labels[i],
+            color=colors[i],
+        )
+
+        if power_sem is not None:
+            sem = np.asarray(power_sem[i, :], dtype=float)
+            sem_valid = valid & np.isfinite(sem)
+            if np.any(sem_valid):
+                lower = np.maximum(power_mean[i, sem_valid] - sem[sem_valid], 0.0)
+                upper = power_mean[i, sem_valid] + sem[sem_valid]
+                plt.fill_between(
+                    freqs[sem_valid],
+                    lower,
+                    upper,
+                    color=colors[i],
+                    alpha=0.15,
+                    linewidth=0,
+                )
+
+    plt.xlabel("Frequencia (1/MCS)")
+    plt.ylabel("Potencia FFT")
+    plt.title("Espectro de potencia medio pos-transiente")
+    plt.grid(alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
 def plota_periodo_dominante(period_samples, period_mean, cfg):
     labels = ["C", "D", "P"]
     colors = ["blue", "red", "green"]

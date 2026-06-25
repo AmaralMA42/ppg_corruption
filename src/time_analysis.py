@@ -71,6 +71,18 @@ def power_spectrum(series, dt=1.0):
     return freqs, power
 
 
+def fixed_length_power_spectrum(series, n_fft, dt=1.0):
+    x = np.asarray(series, dtype=np.float64)
+    if x.size < 2 or n_fft < 2:
+        return np.full(max(n_fft // 2 + 1, 1), np.nan)
+
+    n = min(x.size, n_fft)
+    x = x[:n] - np.mean(x[:n])
+    padded = np.zeros(n_fft, dtype=np.float64)
+    padded[:n] = x
+    return np.abs(np.fft.rfft(padded)) ** 2 / n
+
+
 def dominant_frequency(series, dt=1.0):
     freqs, power = power_spectrum(series, dt=dt)
     if freqs.size <= 1 or np.all(~np.isfinite(power[1:])):
@@ -110,8 +122,10 @@ def analyze_strategy_timeseries(estrat_t, start, absorbed_at=None, dt=1.0, min_p
         absorbed_at = np.asarray(absorbed_at, dtype=np.int64)
 
     max_lag = max(total_passos - start, 1)
+    fft_freqs = np.fft.rfftfreq(max_lag, d=dt)
     variance_samples = np.full((n_strat, n_samples), np.nan)
     autocorr_samples = np.full((n_strat, n_samples, max_lag), np.nan)
+    fft_power_samples = np.full((n_strat, n_samples, fft_freqs.size), np.nan)
     dominant_freq_samples = np.full((n_strat, n_samples), np.nan)
     dominant_power_samples = np.full((n_strat, n_samples), np.nan)
     dominant_period_samples = np.full((n_strat, n_samples), np.nan)
@@ -130,6 +144,11 @@ def analyze_strategy_timeseries(estrat_t, start, absorbed_at=None, dt=1.0, min_p
             variance_samples[strat, sample] = temporal_variance(series)
             corr = autocorrelation(series, normalize=True)
             autocorr_samples[strat, sample, :corr.size] = corr
+            fft_power_samples[strat, sample, :] = fixed_length_power_spectrum(
+                series,
+                max_lag,
+                dt=dt,
+            )
             freq, power, period, peak_ratio = dominant_spectral_metrics(series, dt=dt)
             dominant_freq_samples[strat, sample] = freq
             dominant_power_samples[strat, sample] = power
@@ -141,6 +160,10 @@ def analyze_strategy_timeseries(estrat_t, start, absorbed_at=None, dt=1.0, min_p
         "variance_mean": nanmean_silent(variance_samples, axis=1),
         "autocorr_samples": autocorr_samples,
         "autocorr_mean": nanmean_silent(autocorr_samples, axis=1),
+        "fft_freqs": fft_freqs,
+        "fft_power_samples": fft_power_samples,
+        "fft_power_mean": nanmean_silent(fft_power_samples, axis=1),
+        "fft_power_sem": nansem_silent(fft_power_samples, axis=1),
         "dominant_freq_samples": dominant_freq_samples,
         "dominant_freq_mean": nanmean_silent(dominant_freq_samples, axis=1),
         "dominant_power_samples": dominant_power_samples,

@@ -8,6 +8,7 @@ from core_simulation import monte_carlo_single, inicia_vizinhos
 from plotting import (
     plota_atividade,
     plota_autocorrelacao,
+    plota_fft_power,
     plota_media_com_erro,
     plota_peak_ratio,
     plota_payoff_por_estrategia,
@@ -150,6 +151,13 @@ def plot_saved_sampling(path, cfg=cfg):
         )
     if "autocorr_mean" in arrays:
         plota_autocorrelacao(arrays["autocorr_mean"], cfg)
+    if "fft_freqs" in arrays and "fft_power_mean" in arrays:
+        plota_fft_power(
+            arrays["fft_freqs"],
+            arrays["fft_power_mean"],
+            cfg,
+            power_sem=arrays.get("fft_power_sem"),
+        )
     if "dominant_period_samples" in arrays:
         plota_periodo_dominante(
             arrays["dominant_period_samples"],
@@ -204,6 +212,12 @@ def main():
                 cfg,
             )
             plota_autocorrelacao(time_analysis["autocorr_mean"], cfg)
+            plota_fft_power(
+                time_analysis["fft_freqs"],
+                time_analysis["fft_power_mean"],
+                cfg,
+                power_sem=time_analysis["fft_power_sem"],
+            )
             plota_periodo_dominante(
                 time_analysis["dominant_period_samples"],
                 time_analysis["dominant_period_mean"],
@@ -233,6 +247,10 @@ def main():
             "temporal_variance_mean": time_analysis["variance_mean"],
             "autocorr_samples": time_analysis["autocorr_samples"],
             "autocorr_mean": time_analysis["autocorr_mean"],
+            "fft_freqs": time_analysis["fft_freqs"],
+            "fft_power_samples": time_analysis["fft_power_samples"],
+            "fft_power_mean": time_analysis["fft_power_mean"],
+            "fft_power_sem": time_analysis["fft_power_sem"],
             "dominant_freq_samples": time_analysis["dominant_freq_samples"],
             "dominant_freq_mean": time_analysis["dominant_freq_mean"],
             "dominant_power_samples": time_analysis["dominant_power_samples"],
