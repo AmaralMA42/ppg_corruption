@@ -1,0 +1,4 @@
+campaign,point,L,r,sigma,alpha,K,n_seeds,MCS,window,band_cycles_per_MCS,block_length,global_amplitude,local_amplitude,filtered_coherence,interpretation
+G4,A,100,3.3,1.05,0.40,0.1,10,24000,15000:24000,0.004:0.010,20,0.1711,0.3617,0.39330,finite_size_descriptive
+G4,A,200,3.3,1.05,0.40,0.1,10,24000,15000:24000,0.004:0.010,20,0.0819,0.3669,0.18333,finite_size_descriptive
+G4,A,400,3.3,1.05,0.40,0.1,10,24000,15000:24000,0.004:0.010,20,0.0402,0.3640,0.09221,finite_size_descriptive
