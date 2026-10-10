@@ -1,0 +1,9 @@
+experiment,point,L,r,sigma,alpha_FULL,K,G,c,MCS,measure_window,initial_condition,n,control,coexistence_CDP,all_P,all_D,social_payoff_mean,social_payoff_SEM,social_bootstrap_low95,social_bootstrap_high95,confidence_note
+E5,A,100,3.3,1.05,0.40,0.1,5,1,6000,last_3000,random_CDP,30,FULL,29,1,0,2.140176,0.094022,1.944254,2.246606,descriptive_finite_sample
+E5,A,100,3.3,1.05,0.40,0.1,5,1,6000,last_3000,random_CDP,30,NO_RETURN,0,30,0,-0.575000,0.000000,,,no_return_changes_private_retention
+E5,A,100,3.3,1.05,0.40,0.1,5,1,6000,last_3000,random_CDP,30,NO_EXTRACTION,0,0,30,0.000000,0.000000,,,sigma_zero_makes_C_P_equivalent
+E5,A,100,3.3,1.05,0.40,0.1,5,1,6000,last_3000,random_CDP,30,NO_C_FALLBACK_BONUS,0,0,30,0.000000,0.000000,,,changes_sign_P_minus_D_when_no_C
+E5,A,200,3.3,1.05,0.40,0.1,5,1,6000,last_3000,random_CDP,30,FULL,30,0,0,2.226182,0.003996,,,descriptive_finite_sample
+E5,A,200,3.3,1.05,0.40,0.1,5,1,6000,last_3000,random_CDP,30,NO_RETURN,0,30,0,-0.575000,0.000000,,,no_return_changes_private_retention
+E5,A,200,3.3,1.05,0.40,0.1,5,1,6000,last_3000,random_CDP,30,NO_EXTRACTION,0,0,30,0.000000,0.000000,,,sigma_zero_makes_C_P_equivalent
+E5,A,200,3.3,1.05,0.40,0.1,5,1,6000,last_3000,random_CDP,30,NO_C_FALLBACK_BONUS,0,0,30,0.000000,0.000000,,,changes_sign_P_minus_D_when_no_C
